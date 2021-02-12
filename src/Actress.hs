@@ -25,6 +25,7 @@ module Actress
     -- ** Receiving messages
   , Mailbox
   , receive
+  , tryReceive
 
     -- * Running your program
   , run
@@ -147,6 +148,23 @@ receive
   -> IO msg
   -- ^ Received message
 receive (Mailbox outChan) = Unagi.readChan outChan
+
+
+-- | Receive a message sent to the actor's mailbox. This function blocks until
+-- a message is received.
+--
+-- Example:
+--
+-- > printer :: Actor String
+-- > printer = new \_self mailbox _scope -> forever do
+-- >   tryReceive mailbox >>= \case
+-- >     Just string -> putStrLn string
+-- >     Nothing -> ...
+--
+tryReceive :: Mailbox msg -> IO (Maybe msg)
+tryReceive (Mailbox outChan) = do
+  (element, _) <- Unagi.tryReadChan outChan
+  Unagi.tryRead element
 
 
 -- | Run a top-level actor. Intended to be used at the entry point of your
