@@ -1,3 +1,3 @@
 # actress
 
-💃 Actor framework for Haskell
+💃 Simple actor library for Haskell
