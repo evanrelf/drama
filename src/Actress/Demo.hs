@@ -8,14 +8,14 @@ import Prelude hiding (log)
 
 
 logger :: Actor String
-logger = Actor \_self mailbox _scope -> loop (1 :: Int) \count -> do
+logger = new \_self mailbox _scope -> loop (1 :: Int) \count -> do
   string <- receive mailbox
   putStrLn (show count <> ": " <> string)
   pure $ Just (count + 1)
 
 
 echo :: (String -> IO ()) -> Actor ()
-echo log = Actor \_self _mailbox _scope -> forever do
+echo log = new \_self _mailbox _scope -> forever do
   line <- getLine
   if line == "ping" then
     log "pong"
@@ -24,7 +24,7 @@ echo log = Actor \_self _mailbox _scope -> forever do
 
 
 add1 :: (String -> IO ()) -> Actor (Address Int, Int)
-add1 log = Actor \_self mailbox scope -> forever do
+add1 log = new \_self mailbox scope -> forever do
   log "[add1] Waiting for request"
   (returnAddress, number) <- receive mailbox
   log "[add1] Received request"
@@ -33,14 +33,14 @@ add1 log = Actor \_self mailbox scope -> forever do
 
 
 add1Worker :: (String -> IO ()) -> Int -> Address Int -> Actor ()
-add1Worker log number returnAddress = Actor \_self _mailbox _scope -> do
+add1Worker log number returnAddress = new \_self _mailbox _scope -> do
   log "[add1Worker] Started"
   send returnAddress (number + 1)
   log "[add1Worker] Replied"
 
 
 program :: Actor Int
-program = Actor \self mailbox scope -> do
+program = new \self mailbox scope -> do
   putStrLn "[main] START"
 
   putStrLn "[main] Spawning logger"

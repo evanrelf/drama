@@ -3,12 +3,13 @@
 
 module Actress
   ( -- * Types
-    Actor (..)
+    Actor
   , Address
   , Mailbox
   , Scope
 
     -- * Functions
+  , new
   , receive
   , send
   , spawn
@@ -23,7 +24,7 @@ import qualified Ki
 
 
 newtype Actor msg = Actor
-  { unActor
+  { _unActor
       :: Address msg
       -> Mailbox msg
       -> Scope
@@ -38,6 +39,10 @@ newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
 
 
 newtype Scope = Scope (Ki.Scope)
+
+
+new :: (Address msg -> Mailbox msg -> Scope -> IO ()) -> Actor msg
+new = Actor
 
 
 receive :: Mailbox msg -> IO msg
