@@ -2,7 +2,7 @@ let
   haskellPackagesOverlay =
     import ./nix/override-haskell-packages.nix {
       packages = {
-        "actress" = pkgs.nix-gitignore.gitignoreSource [ ./.nixignore ] ./.;
+        "starring" = pkgs.nix-gitignore.gitignoreSource [ ./.nixignore ] ./.;
       };
       overrides = {
         "ki" = _: { broken = false; };
@@ -12,4 +12,4 @@ let
   pkgs = import ./nix/nixpkgs.nix { overlays = [ haskellPackagesOverlay ]; };
 
 in
-  pkgs.haskellPackages.actress
+  pkgs.haskellPackages.starring

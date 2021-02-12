@@ -1,12 +1,12 @@
 cabal-version: 3.0
 
-name:        actress
+name:        starring
 version:     0.1.0.0
 description: Simple actor library for Haskell
 synopsis:    Simple actor library for Haskell
 author:      Evan Relf <evan@evanrelf.com>
 maintainer:  Evan Relf <evan@evanrelf.com>
-homepage:    https://github.com/evanrelf/actress
+homepage:    https://github.com/evanrelf/starring
 license:     ISC
 copyright:   2021 Evan Relf
 
@@ -34,6 +34,6 @@ library
     , ki ^>= 0.2.0.1
     , unagi-chan ^>= 0.4.1.3
   exposed-modules:
-    , Actress
+    , Starring
   other-modules:
-    , Actress.Demo
+    , Starring.Demo

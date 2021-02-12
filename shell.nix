@@ -1,10 +1,10 @@
 let
   pkgs = import ./nix/nixpkgs.nix {};
 
-  actress = import ./default.nix;
+  starring = import ./default.nix;
 
 in
-  actress.env.overrideAttrs (old: {
+  starring.env.overrideAttrs (old: {
     buildInputs = with pkgs; old.buildInputs ++ [
       cabal-install
       ghcid

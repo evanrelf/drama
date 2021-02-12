@@ -4,7 +4,7 @@
 
 -- | Simple actor library for Haskell
 
-module Actress
+module Starring
   ( -- * Defining actors
     Actor
   , Self (..)

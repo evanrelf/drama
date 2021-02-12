@@ -1,11 +1,11 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Actress.Demo where
+module Starring.Demo where
 
-import Actress
 import Control.Monad (forever)
 import Prelude hiding (log)
+import Starring
 
 
 logger :: Actor String
