@@ -22,33 +22,33 @@ import qualified Control.Concurrent.Chan.Unagi as Unagi
 import qualified Ki
 
 
-newtype Actor message = Actor
+newtype Actor msg = Actor
   { unActor
-      :: Address message
-      -> Mailbox message
+      :: Address msg
+      -> Mailbox msg
       -> Scope
       -> IO ()
   }
 
 
-newtype Address message = Address (Unagi.InChan message)
+newtype Address msg = Address (Unagi.InChan msg)
 
 
-newtype Mailbox message = Mailbox (Unagi.OutChan message)
+newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
 
 
 newtype Scope = Scope (Ki.Scope)
 
 
-receive :: Mailbox message -> IO message
+receive :: Mailbox msg -> IO msg
 receive (Mailbox outChan) = Unagi.readChan outChan
 
 
-send :: Address message -> message -> IO ()
-send (Address inChan) message = Unagi.writeChan inChan message
+send :: Address msg -> msg -> IO ()
+send (Address inChan) msg = Unagi.writeChan inChan msg
 
 
-spawn :: Scope -> Actor message -> IO (Address message)
+spawn :: Scope -> Actor msg -> IO (Address msg)
 spawn (Scope kiScope) (Actor actorFn) = do
   (inChan, outChan) <- Unagi.newChan
   let address = Address inChan
@@ -61,7 +61,7 @@ wait :: Scope -> IO ()
 wait (Scope kiScope) = Ki.wait kiScope
 
 
-run :: Actor message -> IO ()
+run :: Actor msg -> IO ()
 run (Actor actorFn) = do
   (inChan, outChan) <- Unagi.newChan
   let address = Address inChan
