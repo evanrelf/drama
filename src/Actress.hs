@@ -1,11 +1,13 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 -- | Simple actor library for Haskell
 
 module Actress
   ( -- * Defining actors
     Actor
+  , Self (..)
   , new
 
     -- ** Managing state
@@ -36,15 +38,6 @@ import qualified Control.Concurrent.Chan.Unagi as Unagi
 import qualified Ki
 
 
-newtype Actor msg = Actor
-  { _unActor
-      :: Address msg
-      -> Mailbox msg
-      -> Scope
-      -> IO ()
-  }
-
-
 newtype Address msg = Address (Unagi.InChan msg)
 
 
@@ -54,15 +47,26 @@ newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
 newtype Scope = Scope (Ki.Scope)
 
 
+-- | Bundle of information needed by actors
+data Self msg = Self
+  { address :: Address msg
+  , mailbox :: Mailbox msg
+  , scope :: Scope
+  }
+
+
+newtype Actor msg = Actor (Self msg -> IO ())
+
+
 -- | Define a new actor.
 --
 -- Example:
 --
 -- > printer :: Actor String
--- > printer = new \self mailbox scope -> do
+-- > printer = new \Self{address, mailbox, scope} -> do
 -- >   ...
 --
-new :: (Address msg -> Mailbox msg -> Scope -> IO ()) -> Actor msg
+new :: (Self msg -> IO ()) -> Actor msg
 new = Actor
 
 
@@ -101,7 +105,9 @@ spawn (Scope kiScope) (Actor actorFn) = do
   (inChan, outChan) <- Unagi.newChan
   let address = Address inChan
   let mailbox = Mailbox outChan
-  Ki.fork_ kiScope (Ki.scoped \childKiScope -> actorFn address mailbox (Scope childKiScope))
+  Ki.fork_ kiScope $ Ki.scoped \childKiScope -> do
+    let childScope = Scope childKiScope
+    actorFn Self{address, mailbox, scope = childScope}
   pure address
 
 
@@ -138,7 +144,7 @@ send (Address inChan) msg = Unagi.writeChan inChan msg
 -- Example:
 --
 -- > printer :: Actor String
--- > printer = new \_self mailbox _scope -> forever do
+-- > printer = new \Self{mailbox} -> forever do
 -- >   string <- receive mailbox
 -- >   putStrLn string
 --
@@ -156,7 +162,7 @@ receive (Mailbox outChan) = Unagi.readChan outChan
 -- Example:
 --
 -- > printer :: Actor String
--- > printer = new \_self mailbox _scope -> forever do
+-- > printer = new \Self{mailbox} -> forever do
 -- >   tryReceive mailbox >>= \case
 -- >     Just string -> putStrLn string
 -- >     Nothing -> ...
@@ -174,4 +180,6 @@ run (Actor actorFn) = do
   (inChan, outChan) <- Unagi.newChan
   let address = Address inChan
   let mailbox = Mailbox outChan
-  Ki.scoped \kiScope -> actorFn address mailbox (Scope kiScope)
+  Ki.scoped \kiScope -> do
+    let scope = Scope kiScope
+    actorFn Self{address, mailbox, scope}
