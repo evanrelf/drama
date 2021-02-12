@@ -3,7 +3,7 @@
 
 module Actress
   ( -- * Types
-    Actor
+    Actor (..)
   , Address
   , Mailbox
   , Scope
@@ -22,7 +22,13 @@ import qualified Control.Concurrent.Chan.Unagi as Unagi
 import qualified Ki
 
 
-type Actor message = Address message -> Mailbox message -> Scope -> IO ()
+newtype Actor message = Actor
+  { unActor
+      :: Address message
+      -> Mailbox message
+      -> Scope
+      -> IO ()
+  }
 
 
 newtype Address message = Address (Unagi.InChan message)
@@ -43,11 +49,11 @@ send (Address inChan) message = Unagi.writeChan inChan message
 
 
 spawn :: Scope -> Actor message -> IO (Address message)
-spawn (Scope kiScope) actor = do
+spawn (Scope kiScope) (Actor actorFn) = do
   (inChan, outChan) <- Unagi.newChan
   let address = Address inChan
   let mailbox = Mailbox outChan
-  Ki.fork_ kiScope (Ki.scoped \childKiScope -> actor address mailbox (Scope childKiScope))
+  Ki.fork_ kiScope (Ki.scoped \childKiScope -> actorFn address mailbox (Scope childKiScope))
   pure address
 
 
@@ -56,11 +62,11 @@ wait (Scope kiScope) = Ki.wait kiScope
 
 
 run :: Actor message -> IO ()
-run actor = do
+run (Actor actorFn) = do
   (inChan, outChan) <- Unagi.newChan
   let address = Address inChan
   let mailbox = Mailbox outChan
-  Ki.scoped \kiScope -> actor address mailbox (Scope kiScope)
+  Ki.scoped \kiScope -> actorFn address mailbox (Scope kiScope)
 
 
 loop :: a -> (a -> IO (Maybe a)) -> IO ()
