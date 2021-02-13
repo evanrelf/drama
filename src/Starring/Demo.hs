@@ -1,67 +1,71 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
+{-# LANGUAGE RankNTypes #-}
+
 module Starring.Demo where
 
+import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad (forever)
 import Prelude hiding (log)
 import Starring
 
 
-logger :: Actor String
-logger = new \Self{mailbox} -> loop (1 :: Int) \count -> do
-  string <- receive mailbox
-  putStrLn (show count <> ": " <> string)
+logger :: Actor String ()
+logger = loop (1 :: Int) \count -> do
+  string <- receive
+  liftIO $ putStrLn (show count <> ": " <> string)
   pure $ Just (count + 1)
 
 
-echo :: (String -> IO ()) -> Actor ()
-echo log = new \_ -> forever do
-  line <- getLine
+echo :: (forall msg. String -> Actor msg ()) -> Actor () ()
+echo log = forever do
+  line <- liftIO getLine
   if line == "ping" then
     log "pong"
   else
     log line
 
 
-add1 :: (String -> IO ()) -> Actor (Address Int, Int)
-add1 log = new \Self{mailbox, scope} -> forever do
+add1 :: (forall msg. String -> Actor msg ()) -> Actor (Address Int, Int) ()
+add1 log = forever do
   log "[add1] Waiting for request"
-  (returnAddress, number) <- receive mailbox
+  (returnAddress, number) <- receive
   log "[add1] Received request"
   log "[add1] Spawning worker"
-  spawn scope (add1Worker log number returnAddress)
+  spawn (add1Worker log number returnAddress)
 
 
-add1Worker :: (String -> IO ()) -> Int -> Address Int -> Actor ()
-add1Worker log number returnAddress = new \_ -> do
+add1Worker :: (forall msg. String -> Actor msg ()) -> Int -> Address Int -> Actor () ()
+add1Worker log number returnAddress = do
   log "[add1Worker] Started"
   send returnAddress (number + 1)
   log "[add1Worker] Replied"
 
 
-program :: Actor Int
-program = new \Self{address, mailbox, scope} -> do
-  putStrLn "[main] START"
+program :: Actor Int ()
+program = do
+  liftIO $ putStrLn "[main] START"
 
-  putStrLn "[main] Spawning logger"
-  loggerAddress <- spawn scope logger
+  liftIO $ putStrLn "[main] Spawning logger"
+  loggerAddress <- spawn logger
 
   let log = send loggerAddress
 
-  putStrLn "[main] Spawning echo"
-  _ <- spawn scope (echo log)
+  liftIO $ putStrLn "[main] Spawning echo"
+  _ <- spawn (echo log)
 
   log "[main] Spawning add1"
-  add1Address <- spawn scope (add1 log)
+  add1Address <- spawn (add1 log)
 
   log "[main] Sending number to add1"
+  address <- here
   send add1Address (address, 1)
-  two <- receive mailbox
+  two <- receive
   log ("[main] Received response from add1: " <> show two)
 
   log "[main] FINISH"
-  wait scope
+  wait
 
 
 main :: IO ()

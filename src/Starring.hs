@@ -1,31 +1,33 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE RankNTypes #-}
 
 -- | Simple actor library for Haskell
 
 module Starring
   ( -- * Defining actors
     Actor
-  , Self (..)
-  , new
 
     -- ** Managing state
   , loop
 
     -- * Spawning actors
-  , Scope
   , spawn
   , wait
 
     -- * Messages
 
-    -- ** Sending messages
+    -- ** Addresses
   , Address
+  , here
+
+    -- ** Sending messages
   , send
 
     -- ** Receiving messages
-  , Mailbox
   , receive
   , tryReceive
 
@@ -33,6 +35,9 @@ module Starring
   , run
   )
 where
+
+import Control.Monad.IO.Class (MonadIO (..))
+import Control.Monad.Reader (MonadReader (..), ReaderT (..), asks)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
 import qualified Ki
@@ -47,27 +52,25 @@ newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
 newtype Scope = Scope (Ki.Scope)
 
 
--- | Bundle of information needed by actors
-data Self msg = Self
+data ActorEnv msg = ActorEnv
   { address :: Address msg
   , mailbox :: Mailbox msg
   , scope :: Scope
   }
 
 
-newtype Actor msg = Actor (Self msg -> IO ())
+newtype Actor msg a = Actor (ReaderT (ActorEnv msg) IO a)
+  deriving newtype
+    ( Functor
+    , Applicative
+    , Monad
+    , MonadIO
+    , MonadReader (ActorEnv msg)
+    )
 
 
--- | Define a new actor.
---
--- Example:
---
--- > printer :: Actor String
--- > printer = new \Self{address, mailbox, scope} -> do
--- >   ...
---
-new :: (Self msg -> IO ()) -> Actor msg
-new = Actor
+runActor :: MonadIO m => ActorEnv msg -> Actor msg a -> m a
+runActor actorEnv (Actor m) = liftIO $ runReaderT m actorEnv
 
 
 -- | Loop indefinitely with state. Looping stops when you return `Nothing`. Use
@@ -75,9 +78,9 @@ new = Actor
 --
 -- Example:
 --
--- > counter :: IO ()
+-- > counter :: Actor () ()
 -- > counter = loop (10 :: Int) \count -> do
--- >   print count
+-- >   liftIO $ print count
 -- >   if count > 0
 -- >     then pure $ Just (count - 1)
 -- >     else pure Nothing
@@ -85,9 +88,9 @@ new = Actor
 loop
   :: s
   -- ^ Initial state
-  -> (s -> IO (Maybe s))
+  -> (s -> Actor msg (Maybe s))
   -- ^ Action to perform, optionally returning a new state to continue looping
-  -> IO ()
+  -> Actor msg ()
 loop x0 k = do
   k x0 >>= \case
     Just x -> loop x k
@@ -98,16 +101,20 @@ loop x0 k = do
 --
 -- Example:
 --
--- > printerAddress <- spawn scope printer
+-- > printerAddress <- spawn printer
 --
-spawn :: Scope -> Actor msg -> IO (Address msg)
-spawn (Scope kiScope) (Actor actorFn) = do
-  (inChan, outChan) <- Unagi.newChan
+spawn :: Actor childMsg () -> Actor msg (Address childMsg)
+spawn actor = do
+  (inChan, outChan) <- liftIO $ Unagi.newChan
   let address = Address inChan
   let mailbox = Mailbox outChan
-  Ki.fork_ kiScope $ Ki.scoped \childKiScope -> do
+
+  Scope kiScope <- asks scope
+  liftIO $ Ki.fork_ kiScope $ Ki.scoped \childKiScope ->
     let childScope = Scope childKiScope
-    actorFn Self{address, mailbox, scope = childScope}
+        childEnv = ActorEnv{address, mailbox, scope = childScope}
+     in runActor childEnv actor
+
   pure address
 
 
@@ -115,12 +122,19 @@ spawn (Scope kiScope) (Actor actorFn) = do
 --
 -- Example:
 --
--- > fooAddress <- spawn scope foo
--- > barAddress <- spawn scope bar
--- > wait scope
+-- > fooAddress <- spawn foo
+-- > barAddress <- spawn bar
+-- > wait
 --
-wait :: Scope -> IO ()
-wait (Scope kiScope) = Ki.wait kiScope
+wait :: Actor msg ()
+wait = do
+  Scope kiScope <- asks scope
+  liftIO $ Ki.wait kiScope
+
+
+-- | Return the current actor's own address
+here :: Actor msg (Address msg)
+here = asks address
 
 
 -- | Given an actor's address, send it a message.
@@ -130,12 +144,12 @@ wait (Scope kiScope) = Ki.wait kiScope
 -- > send printerAddress "Hello, world!"
 --
 send
-  :: Address msg
+  :: Address recipientMsg
   -- ^ Recipient actor's address
-  -> msg
+  -> recipientMsg
   -- ^ Message
-  -> IO ()
-send (Address inChan) msg = Unagi.writeChan inChan msg
+  -> Actor msg ()
+send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 
 
 -- | Receive a message sent to the actor's mailbox. This function blocks until
@@ -143,17 +157,15 @@ send (Address inChan) msg = Unagi.writeChan inChan msg
 --
 -- Example:
 --
--- > printer :: Actor String
--- > printer = new \Self{mailbox} -> forever do
--- >   string <- receive mailbox
--- >   putStrLn string
+-- > printer :: Actor String ()
+-- > printer = forever do
+-- >   string <- receive
+-- >   liftIO $ putStrLn string
 --
-receive
-  :: Mailbox msg
-  -- ^ Actor's mailbox
-  -> IO msg
-  -- ^ Received message
-receive (Mailbox outChan) = Unagi.readChan outChan
+receive :: Actor msg msg
+receive = do
+  Mailbox outChan <- asks mailbox
+  liftIO $ Unagi.readChan outChan
 
 
 -- | Receive a message sent to the actor's mailbox. This function blocks until
@@ -161,25 +173,27 @@ receive (Mailbox outChan) = Unagi.readChan outChan
 --
 -- Example:
 --
--- > printer :: Actor String
--- > printer = new \Self{mailbox} -> forever do
--- >   tryReceive mailbox >>= \case
--- >     Just string -> putStrLn string
+-- > printer :: Actor String ()
+-- > printer = forever do
+-- >   tryReceive >>= \case
+-- >     Just string -> liftIO $ putStrLn string
 -- >     Nothing -> ...
 --
-tryReceive :: Mailbox msg -> IO (Maybe msg)
-tryReceive (Mailbox outChan) = do
-  (element, _) <- Unagi.tryReadChan outChan
-  Unagi.tryRead element
+tryReceive :: Actor msg (Maybe msg)
+tryReceive = do
+  Mailbox outChan <- asks mailbox
+  (element, _) <- liftIO $ Unagi.tryReadChan outChan
+  liftIO $ Unagi.tryRead element
 
 
 -- | Run a top-level actor. Intended to be used at the entry point of your
 -- program.
-run :: Actor msg -> IO ()
-run (Actor actorFn) = do
-  (inChan, outChan) <- Unagi.newChan
+run :: MonadIO m => Actor msg a -> m a
+run actor = do
+  (inChan, outChan) <- liftIO $ Unagi.newChan
   let address = Address inChan
   let mailbox = Mailbox outChan
-  Ki.scoped \kiScope -> do
+
+  liftIO $ Ki.scoped \kiScope -> do
     let scope = Scope kiScope
-    actorFn Self{address, mailbox, scope}
+    runActor ActorEnv{address, mailbox, scope} actor
