@@ -15,6 +15,9 @@
 
 module Starring.Internal where
 
+import Control.Applicative (Alternative)
+import Control.Monad (MonadPlus)
+import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Reader (ReaderT (..), asks)
 
@@ -32,6 +35,10 @@ newtype Actor msg a = Actor (ReaderT (ActorEnv msg) IO a)
     , Applicative
     , Monad
     , MonadIO
+    , Alternative
+    , MonadPlus
+    , MonadFail
+    , MonadFix
     )
 
 
