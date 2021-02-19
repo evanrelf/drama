@@ -35,8 +35,14 @@ common common
     -fshow-warning-groups
 
 
+common stan
+  ghc-options:
+    -fwrite-ide-info
+    -hiedir=.hie
+
+
 library
-  import: common
+  import: common, stan
   hs-source-dirs: src
   build-depends:
     , ki           ^>= 0.2.0.1
@@ -50,7 +56,7 @@ library
 
 
 benchmark bench
-  import: common
+  import: common, stan
   type: exitcode-stdio-1.0
   hs-source-dirs: bench
   main-is: Main.hs

@@ -26,6 +26,7 @@ in
       hoogle-open
       pkgs.cabal-install
       pkgs.ghcid
+      pkgs.haskellPackages.stan
       pkgs.hlint
     ];
 
