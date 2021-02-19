@@ -1,7 +1,9 @@
-{ compiler ? null # Specify a different version of GHC
-, packages ? {}  # Add or replace Haskell packages
-, overrides ? {} # Override existing Haskell packages
-, hackage ? null # Specify revision of all-cabal-hashes
+{ compiler ? null
+, packages ? {}
+, override ? {}
+, overrideCabal ? {}
+, overrideAttrs ? {}
+, hackage ? null
 }:
 
 pkgsFinal: pkgsPrev:
@@ -9,12 +11,24 @@ pkgsFinal: pkgsPrev:
 let
   packagesExtension = pkgsPrev.haskell.lib.packageSourceOverrides packages;
 
-  overridesExtension = haskellPackagesFinal: haskellPackagesPrev:
+  overrideExtension = haskellPackagesFinal: haskellPackagesPrev:
+    let
+      applyOverride = name: fn: haskellPackagesPrev."${name}".override fn;
+    in
+      pkgsPrev.lib.mapAttrs applyOverride override;
+
+  overrideCabalExtension = haskellPackagesFinal: haskellPackagesPrev:
     let
       applyOverride = name: fn:
         pkgsPrev.haskell.lib.overrideCabal haskellPackagesPrev."${name}" fn;
     in
-      pkgsPrev.lib.mapAttrs applyOverride overrides;
+      pkgsPrev.lib.mapAttrs applyOverride overrideCabal;
+
+  overrideAttrsExtension = haskellPackagesFinal: haskellPackagesPrev:
+    let
+      applyOverride = name: fn: haskellPackagesPrev."${name}".overrideAttrs fn;
+    in
+      pkgsPrev.lib.mapAttrs applyOverride overrideAttrs;
 
   haskellPackages =
     (if compiler == null
@@ -26,7 +40,9 @@ let
           pkgsPrev.lib.composeExtensions
           (old.overrides or (_: _: {}))
           [ packagesExtension
-            overridesExtension
+            overrideExtension
+            overrideCabalExtension
+            overrideAttrsExtension
           ];
     });
 
