@@ -1,5 +1,5 @@
 -- |
--- Module:     Starring
+-- Module:     Drama
 -- Stability:  experimental
 -- License:    ISC
 -- Copyright:  © 2021 Evan Relf
@@ -20,7 +20,7 @@
 -- > import Control.Concurrent (threadDelay)
 -- > import Control.Monad (forever)
 -- > import Control.Monad.IO.Class (MonadIO (..))
--- > import Starring
+-- > import Drama
 -- > import Prelude hiding (log)
 -- >
 -- > main :: IO ()
@@ -68,7 +68,7 @@
 -- > FizzBuzz
 -- > ...
 
-module Starring
+module Drama
   ( Actor
 
     -- * Spawning actors
@@ -98,4 +98,4 @@ module Starring
   )
 where
 
-import Starring.Internal
+import Drama.Internal

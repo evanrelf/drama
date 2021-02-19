@@ -6,7 +6,7 @@ module Main (main) where
 
 import Criterion.Types
 import Criterion.Main
-import Starring
+import Drama
 import Prelude hiding (log, max, sum)
 
 

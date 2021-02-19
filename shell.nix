@@ -14,7 +14,7 @@ let
 
 in
   pkgs.haskellPackages.shellFor {
-    packages = p: [ p.starring ];
+    packages = p: [ p.drama ];
 
     doBenchmark = true;
 

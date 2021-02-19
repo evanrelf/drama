@@ -3,12 +3,12 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Starring.Demo where
+module Drama.Demo where
 
 import Control.Concurrent (threadDelay)
 import Control.Monad (forever)
 import Control.Monad.IO.Class (MonadIO (..))
-import Starring
+import Drama
 import Prelude hiding (log)
 
 

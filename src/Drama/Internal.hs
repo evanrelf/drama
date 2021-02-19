@@ -7,13 +7,13 @@
 {-# OPTIONS_HADDOCK not-home #-}
 
 -- |
--- Module:     Starring.Internal
+-- Module:     Drama.Internal
 -- Stability:  experimental
 -- License:    ISC
 -- Copyright:  © 2021 Evan Relf
 -- Maintainer: evan@evanrelf.com
 
-module Starring.Internal where
+module Drama.Internal where
 
 import Control.Applicative (Alternative)
 import Control.Monad (MonadPlus)
