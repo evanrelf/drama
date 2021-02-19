@@ -1,7 +1,7 @@
 -- |
 -- Module:     Drama
 -- Stability:  experimental
--- License:    ISC
+-- License:    BSD-3-Clause
 -- Copyright:  © 2021 Evan Relf
 -- Maintainer: evan@evanrelf.com
 --
