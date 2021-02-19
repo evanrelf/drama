@@ -159,11 +159,17 @@ loop s0 k =
 
 
 -- | Continue looping with state.
+--
+-- > continue s = pure (Left s)
+--
 continue :: s -> Actor msg (Either s a)
 continue s = pure (Left s)
 
 
 -- | Exit loop with value.
+--
+-- > exit x = pure (Right x)
+--
 exit :: a -> Actor msg (Either s a)
 exit x = pure (Right x)
 
@@ -203,7 +209,7 @@ wait = do
   liftIO $ Ki.wait kiScope
 
 
--- | Return the current actor's own address
+-- | Return the current actor's own address.
 here :: Actor msg (Address msg)
 here = asks address
 
