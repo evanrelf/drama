@@ -7,11 +7,22 @@ to the [Haskell Package Versioning Policy][pvp].
 
 ## [Unreleased]
 
-## [0.1.0.0] - 2021-02-18
+## [0.1.0.1] - 2021-02-19
+
+### Fixed
+
+- Fixed build failing on GHC 8.6.5 due to missing `MonadFail` type class
+
+### Changed
+
+- Relaxed upper bound on `transformers` library
+
+## [0.1.0.0] - 2021-02-19
 
 Initial release
 
-[Unreleased]: https://github.com/evanrelf/drama/compare/v0.1.0.0...HEAD
+[Unreleased]: https://github.com/evanrelf/drama/compare/v0.1.0.1...HEAD
+[0.1.0.1]: https://github.com/evanrelf/drama/releases/tag/v0.1.0.1
 [0.1.0.0]: https://github.com/evanrelf/drama/releases/tag/v0.1.0.0
 
 [changelog]: https://keepachangelog.com/en/1.0.0/
