@@ -21,5 +21,7 @@ jobs:
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - run: nix-shell --run 'hlint --git'
         name: hlint
+      - run: nix-shell --run 'stan'
+        name: stan
       - run: nix-build
         name: nix-build
