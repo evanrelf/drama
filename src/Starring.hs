@@ -8,11 +8,7 @@
 -- | Simple actor library for Haskell
 
 module Starring
-  ( -- * Defining actors
-    Actor
-
-    -- ** Managing state
-  , loop
+  ( Actor
 
     -- * Spawning actors
   , spawn
@@ -30,6 +26,9 @@ module Starring
     -- ** Receiving messages
   , receive
   , tryReceive
+
+    -- * Managing state
+  , loop
 
     -- * Running your program
   , run
@@ -97,7 +96,7 @@ loop x0 k = do
     Nothing -> pure ()
 
 
--- | Spawn a new actor in the given scope. Returns the spawned actor's address.
+-- | Spawn a new actor. Returns the spawned actor's address.
 --
 -- Example:
 --
@@ -118,7 +117,7 @@ spawn actor = do
   pure address
 
 
--- | Wait for all actors spawned in the given scope to terminate.
+-- | Wait for all actors spawned by the current actor to terminate.
 --
 -- Example:
 --
