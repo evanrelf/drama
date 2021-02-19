@@ -1,7 +1,7 @@
 let
-  pkgs = import ./nix/nixpkgs.nix {};
+  pkgs = import ./nix/pkgs.nix;
 
-  starring = import ./default.nix;
+  starring = pkgs.haskellPackages.starring;
 
 in
   starring.env.overrideAttrs (old: {
