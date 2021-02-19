@@ -1,4 +1,5 @@
-{ packages ? {}  # Add or replace Haskell packages
+{ compiler ? null # Specify a different version of GHC
+, packages ? {}  # Add or replace Haskell packages
 , overrides ? {} # Override existing Haskell packages
 , hackage ? null # Specify revision of all-cabal-hashes
 }:
@@ -16,7 +17,10 @@ let
       pkgsPrev.lib.mapAttrs applyOverride overrides;
 
   haskellPackages =
-    pkgsPrev.haskellPackages.override (old: {
+    (if compiler == null
+       then pkgsPrev.haskellPackages
+       else pkgsPrev.haskell.packages."${compiler}"
+    ).override (old: {
       overrides =
         pkgsPrev.lib.fold
           pkgsPrev.lib.composeExtensions
