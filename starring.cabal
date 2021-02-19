@@ -36,6 +36,7 @@ library
     , unagi-chan ^>= 0.4.1.3
   exposed-modules:
     , Starring
+    , Starring.Internal
   other-modules:
     , Starring.Demo
 
