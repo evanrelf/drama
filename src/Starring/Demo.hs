@@ -1,21 +1,51 @@
 {-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE NamedFieldPuns #-}
-
+{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE RankNTypes #-}
 
 module Starring.Demo where
 
-import Control.Monad.IO.Class (MonadIO (..))
+import Control.Concurrent (threadDelay)
 import Control.Monad (forever)
-import Prelude hiding (log)
+import Control.Monad.IO.Class (MonadIO (..))
 import Starring
+import Prelude hiding (log)
+
+
+main2 :: IO ()
+main2 = run do
+  loggerAddress <- spawn logger
+  _ <- spawn (fizzBuzz loggerAddress)
+  wait
 
 
 logger :: Actor String ()
-logger = loop (1 :: Int) \count -> do
+logger = forever do
   string <- receive
-  liftIO $ putStrLn (show count <> ": " <> string)
-  continue (count + 1)
+  liftIO $ putStrLn string
+
+
+fizzBuzz :: Address String -> Actor () ()
+fizzBuzz loggerAddress = do
+  let log = send loggerAddress
+
+  loop (1 :: Int) \n -> do
+    if | n `mod` 15 == 0 -> log "FizzBuzz"
+       | n `mod`  3 == 0 -> log "Fizz"
+       | n `mod`  5 == 0 -> log "Buzz"
+       | otherwise       -> log (show n)
+
+    liftIO $ threadDelay 500_000
+
+    continue (n + 1)
+
+
+counter :: Actor msg Int
+counter = loop 10 \count -> do
+  liftIO $ print count
+  if count > 0
+    then continue (count - 1)
+    else exit count
 
 
 echo :: (forall msg. String -> Actor msg ()) -> Actor () ()
