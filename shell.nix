@@ -18,15 +18,17 @@ in
       (pkgs.haskell.lib.doBenchmark p.drama)
     ];
 
-    doBenchmark = true;
-
-    withHoogle = true;
-
     buildInputs = [
       hoogle-open
       pkgs.cabal-install
       pkgs.ghcid
+      pkgs.haskellPackages.stan
+      pkgs.hlint
     ];
+
+    doBenchmark = true;
+
+    withHoogle = true;
 
     shellHook = ''
       alias hoogle=hoogle-open

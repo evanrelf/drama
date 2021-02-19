@@ -84,7 +84,7 @@ newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
 
 
 -- | @since 0.1.0.0
-newtype Scope = Scope (Ki.Scope)
+newtype Scope = Scope Ki.Scope
 
 
 -- | Spawn a new actor. Returns the spawned actor's address.
@@ -96,7 +96,7 @@ newtype Scope = Scope (Ki.Scope)
 -- @since 0.1.0.0
 spawn :: Actor childMsg () -> Actor msg (Address childMsg)
 spawn actor = do
-  (inChan, outChan) <- liftIO $ Unagi.newChan
+  (inChan, outChan) <- liftIO Unagi.newChan
   let address = Address inChan
   let mailbox = Mailbox outChan
 
@@ -185,7 +185,7 @@ tryReceive = do
 -- @since 0.1.0.0
 run :: MonadIO m => Actor msg a -> m a
 run actor = do
-  (inChan, outChan) <- liftIO $ Unagi.newChan
+  (inChan, outChan) <- liftIO Unagi.newChan
   let address = Address inChan
   let mailbox = Mailbox outChan
 
