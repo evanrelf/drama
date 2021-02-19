@@ -1,12 +1,30 @@
 let
   pkgs = import ./nix/pkgs.nix;
 
-  starring = pkgs.haskellPackages.starring;
+  # Defined as a separate script, instead of a Bash function in `shellHook`, for
+  # compatibility with `lorri` (doesn't support `shellHook`s).
+  hoogle-open = pkgs.writeShellScriptBin "hoogle-open" ''
+    if [ "$#" -eq 0 ]; then
+      open "http://localhost:9999"
+      command hoogle server --port 9999 --local
+    else
+      command hoogle "$@"
+    fi
+  '';
 
 in
-  starring.env.overrideAttrs (old: {
-    buildInputs = with pkgs; old.buildInputs ++ [
-      cabal-install
-      ghcid
+  pkgs.haskellPackages.shellFor {
+    packages = p: [ p.starring ];
+
+    withHoogle = true;
+
+    buildInputs = [
+      hoogle-open
+      pkgs.cabal-install
+      pkgs.ghcid
     ];
-  })
+
+    shellHook = ''
+      alias hoogle=hoogle-open
+    '';
+  }
