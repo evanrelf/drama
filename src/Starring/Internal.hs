@@ -153,12 +153,7 @@ here = asks address
 -- > send printerAddress "Hello, world!"
 --
 -- @since 0.1.0.0
-send
-  :: Address recipientMsg
-  -- ^ Recipient actor's address
-  -> recipientMsg
-  -- ^ Message
-  -> Actor msg ()
+send :: Address recipientMsg -> recipientMsg -> Actor msg ()
 send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 
 
