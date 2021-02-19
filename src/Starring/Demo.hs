@@ -15,7 +15,7 @@ logger :: Actor String ()
 logger = loop (1 :: Int) \count -> do
   string <- receive
   liftIO $ putStrLn (show count <> ": " <> string)
-  pure $ Just (count + 1)
+  continue (count + 1)
 
 
 echo :: (forall msg. String -> Actor msg ()) -> Actor () ()

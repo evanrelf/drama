@@ -29,6 +29,8 @@ module Starring
 
     -- * Managing state
   , loop
+  , continue
+  , exit
 
     -- * Running your program
   , run
@@ -72,28 +74,38 @@ runActor :: MonadIO m => ActorEnv msg -> Actor msg a -> m a
 runActor actorEnv (Actor m) = liftIO $ runReaderT m actorEnv
 
 
--- | Loop indefinitely with state. Looping stops when you return `Nothing`. Use
--- `forever` for stateless infinite loops.
+-- | Loop indefinitely with state. Use `forever` for stateless infinite loops.
 --
 -- Example:
 --
--- > counter :: Actor () ()
--- > counter = loop (10 :: Int) \count -> do
+-- > counter :: Actor () Int
+-- > counter = loop 10 \count -> do
 -- >   liftIO $ print count
 -- >   if count > 0
--- >     then pure $ Just (count - 1)
--- >     else pure Nothing
+-- >     then continue (count - 1)
+-- >     else exit count
 --
 loop
   :: s
   -- ^ Initial state
-  -> (s -> Actor msg (Maybe s))
-  -- ^ Action to perform, optionally returning a new state to continue looping
-  -> Actor msg ()
-loop x0 k = do
-  k x0 >>= \case
-    Just x -> loop x k
-    Nothing -> pure ()
+  -> (s -> Actor msg (Either s a))
+  -- ^ Action to perform, either returning a new state to continue looping, or
+  -- a final value to stop looping.
+  -> Actor msg a
+loop s0 k =
+  k s0 >>= \case
+    Left s -> loop s k
+    Right x -> pure x
+
+
+-- | Continue looping with state.
+continue :: s -> Actor msg (Either s a)
+continue s = pure (Left s)
+
+
+-- | Exit loop with value.
+exit :: a -> Actor msg (Either s a)
+exit x = pure (Right x)
 
 
 -- | Spawn a new actor. Returns the spawned actor's address.
