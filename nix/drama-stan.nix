@@ -5,7 +5,7 @@ let
 
 in
   stdenv.mkDerivation {
-    name = "${drama.pname}-stan";
+    name = "${drama.name}-stan";
 
     src = drama.src;
 
