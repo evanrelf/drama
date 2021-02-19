@@ -1,18 +1,14 @@
 let
   pkgs = import ./nix/pkgs.nix;
 
-in
-  pkgs.haskellPackages.drama.overrideAttrs (old: {
-    nativeBuildInputs = (old.nativeBuildInputs or []) ++ [
-      pkgs.haskellPackages.hlint
-      pkgs.haskellPackages.stan
-    ];
+  drama = pkgs.haskellPackages.drama;
 
-    checkPhase = (old.checkPhase or "") + ''
-      echo "Running HLint"
-      hlint .
+  drama-hlint = pkgs.callPackage ./hlint.nix {};
 
-      echo "Running Stan"
-      stan
-    '';
-  })
+
+in {
+  inherit
+    drama
+    drama-hlint
+  ;
+}
