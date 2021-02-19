@@ -3,9 +3,9 @@ let
 
   drama = pkgs.haskellPackages.drama;
 
-  drama-hlint = pkgs.callPackage ./hlint.nix {};
+  drama-hlint = pkgs.callPackage ./nix/drama-hlint.nix {};
 
-  drama-stan = pkgs.callPackage ./stan.nix {};
+  drama-stan = pkgs.callPackage ./nix/drama-stan.nix {};
 
 in {
   inherit

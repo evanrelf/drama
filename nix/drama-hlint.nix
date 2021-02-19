@@ -1,23 +1,23 @@
-{ haskellPackages, stdenv }:
+{ haskellPackages, hlint, stdenv }:
 
 let
   drama = haskellPackages.drama;
 
 in
   stdenv.mkDerivation {
-    name = "${drama.pname}-stan";
+    name = "${drama.pname}-hlint";
 
     src = drama.src;
 
-    nativeBuildInputs = [ haskellPackages.stan ];
+    nativeBuildInputs = [ hlint ];
 
     phases = [ "unpackPhase" "checkPhase" ];
 
     doCheck = true;
 
     checkPhase = ''
-      stan --hiedir "${drama.hie}" report
+      hlint . --report
       mkdir "$out"
-      cp stan.html "$out"
+      mv report.html "$out/hlint.html"
     '';
   }
