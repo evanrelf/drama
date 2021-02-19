@@ -2,8 +2,9 @@ cabal-version: 3.0
 
 name:        starring
 version:     0.1.0.0
-description: Simple actor library for Haskell
 synopsis:    Simple actor library for Haskell
+description: Simple actor library for Haskell
+category:    Concurrency
 author:      Evan Relf <evan@evanrelf.com>
 maintainer:  Evan Relf <evan@evanrelf.com>
 homepage:    https://github.com/evanrelf/starring
