@@ -5,10 +5,12 @@ let
 
   drama-hlint = pkgs.callPackage ./hlint.nix {};
 
+  drama-stan = pkgs.callPackage ./stan.nix {};
 
 in {
   inherit
     drama
     drama-hlint
+    drama-stan
   ;
 }
