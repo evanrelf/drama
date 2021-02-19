@@ -1,8 +1,15 @@
--- | Simple actor library for Haskell
+-- |
+-- Module:     Starring
+-- Stability:  Experimental
+-- License:    ISC
+-- Copyright:  © 2021 Evan Relf
+-- Maintainer: evan@evanrelf.com
+--
+-- Simple actor library for Haskell
 --
 -- ==== __Example__
 --
--- Fizz buzz, using three actors: `main`, `logger`, and `fizzBuzz`:
+-- Fizz buzz, using three actors: @main@, @logger@, and @fizzBuzz@:
 --
 -- > {-# LANGUAGE BlockArguments #-}
 -- > {-# LANGUAGE MultiWayIf #-}

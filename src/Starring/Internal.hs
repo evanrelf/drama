@@ -4,6 +4,15 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
+{-# OPTIONS_HADDOCK not-home #-}
+
+-- |
+-- Module:     Starring.Internal
+-- Stability:  Experimental
+-- License:    ISC
+-- Copyright:  © 2021 Evan Relf
+-- Maintainer: evan@evanrelf.com
+
 module Starring.Internal where
 
 import Control.Monad.IO.Class (MonadIO (..))
@@ -13,15 +22,19 @@ import qualified Control.Concurrent.Chan.Unagi as Unagi
 import qualified Ki
 
 
+-- | @since 0.1.0.0
 newtype Address msg = Address (Unagi.InChan msg)
 
 
+-- | @since 0.1.0.0
 newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
 
 
+-- | @since 0.1.0.0
 newtype Scope = Scope (Ki.Scope)
 
 
+-- | @since 0.1.0.0
 data ActorEnv msg = ActorEnv
   { address :: Address msg
   , mailbox :: Mailbox msg
@@ -29,6 +42,7 @@ data ActorEnv msg = ActorEnv
   }
 
 
+-- | @since 0.1.0.0
 newtype Actor msg a = Actor (ReaderT (ActorEnv msg) IO a)
   deriving newtype
     ( Functor
@@ -39,11 +53,13 @@ newtype Actor msg a = Actor (ReaderT (ActorEnv msg) IO a)
     )
 
 
+-- | @since 0.1.0.0
 runActor :: MonadIO m => ActorEnv msg -> Actor msg a -> m a
 runActor actorEnv (Actor m) = liftIO $ runReaderT m actorEnv
 
 
--- | Loop indefinitely with state. Use `forever` for stateless infinite loops.
+-- | Loop indefinitely with state. Use `Control.Monad.forever` for stateless
+-- infinite loops.
 --
 -- Example:
 --
@@ -54,6 +70,7 @@ runActor actorEnv (Actor m) = liftIO $ runReaderT m actorEnv
 -- >     then continue (count - 1)
 -- >     else exit count
 --
+-- @since 0.1.0.0
 loop
   :: s
   -- ^ Initial state
@@ -69,16 +86,18 @@ loop s0 k =
 
 -- | Continue looping with state.
 --
--- > continue s = pure (Left s)
+-- prop> continue s = pure (Left s)
 --
+-- @since 0.1.0.0
 continue :: s -> Actor msg (Either s a)
 continue s = pure (Left s)
 
 
 -- | Exit loop with value.
 --
--- > exit x = pure (Right x)
+-- prop> exit x = pure (Right x)
 --
+-- @since 0.1.0.0
 exit :: a -> Actor msg (Either s a)
 exit x = pure (Right x)
 
@@ -89,6 +108,7 @@ exit x = pure (Right x)
 --
 -- > printerAddress <- spawn printer
 --
+-- @since 0.1.0.0
 spawn :: Actor childMsg () -> Actor msg (Address childMsg)
 spawn actor = do
   (inChan, outChan) <- liftIO $ Unagi.newChan
@@ -112,6 +132,7 @@ spawn actor = do
 -- > barAddress <- spawn bar
 -- > wait
 --
+-- @since 0.1.0.0
 wait :: Actor msg ()
 wait = do
   Scope kiScope <- asks scope
@@ -119,6 +140,8 @@ wait = do
 
 
 -- | Return the current actor's own address.
+--
+-- @since 0.1.0.0
 here :: Actor msg (Address msg)
 here = asks address
 
@@ -129,6 +152,7 @@ here = asks address
 --
 -- > send printerAddress "Hello, world!"
 --
+-- @since 0.1.0.0
 send
   :: Address recipientMsg
   -- ^ Recipient actor's address
@@ -148,6 +172,7 @@ send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 -- >   string <- receive
 -- >   liftIO $ putStrLn string
 --
+-- @since 0.1.0.0
 receive :: Actor msg msg
 receive = do
   Mailbox outChan <- asks mailbox
@@ -165,6 +190,7 @@ receive = do
 -- >     Just string -> liftIO $ putStrLn string
 -- >     Nothing -> ...
 --
+-- @since 0.1.0.0
 tryReceive :: Actor msg (Maybe msg)
 tryReceive = do
   Mailbox outChan <- asks mailbox
@@ -174,6 +200,8 @@ tryReceive = do
 
 -- | Run a top-level actor. Intended to be used at the entry point of your
 -- program.
+--
+-- @since 0.1.0.0
 run :: MonadIO m => Actor msg a -> m a
 run actor = do
   (inChan, outChan) <- liftIO $ Unagi.newChan
