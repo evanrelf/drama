@@ -22,35 +22,6 @@ import qualified Control.Concurrent.Chan.Unagi as Unagi
 import qualified Ki
 
 
--- | The address for an actor. Returned after `spawn`ing an actor or asking for
--- the current actor's address with `here`. Used to `send` messages to specific
--- actors.
---
--- @since 0.1.0.0
-newtype Address msg = Address (Unagi.InChan msg)
-
-
--- | Where messages are delivered. Implicitly provided to `receive` and
--- `tryReceive` by the `Actor` monad.
---
--- @since 0.1.0.0
-newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
-
-
--- | @since 0.1.0.0
-newtype Scope = Scope (Ki.Scope)
-
-
--- | Environment for the `Actor` monad.
---
--- @since 0.1.0.0
-data ActorEnv msg = ActorEnv
-  { address :: Address msg
-  , mailbox :: Mailbox msg
-  , scope :: Scope
-  }
-
-
 -- | The `Actor` monad, where you can `spawn` other actors, and `send` and
 -- `receive` messages.
 --
@@ -70,48 +41,33 @@ runActor :: MonadIO m => ActorEnv msg -> Actor msg a -> m a
 runActor actorEnv (Actor m) = liftIO $ runReaderT m actorEnv
 
 
--- | Loop indefinitely with state. Use `Control.Monad.forever` for stateless
--- infinite loops.
---
--- Example:
---
--- > counter :: Actor () Int
--- > counter = loop 10 \count -> do
--- >   liftIO $ print count
--- >   if count > 0
--- >     then continue (count - 1)
--- >     else exit count
+-- | Environment for the `Actor` monad.
 --
 -- @since 0.1.0.0
-loop
-  :: s
-  -- ^ Initial state
-  -> (s -> Actor msg (Either s a))
-  -- ^ Action to perform, either returning a new state to continue looping, or
-  -- a final value to stop looping.
-  -> Actor msg a
-loop s0 k =
-  k s0 >>= \case
-    Left s -> loop s k
-    Right x -> pure x
+data ActorEnv msg = ActorEnv
+  { address :: Address msg
+  , mailbox :: Mailbox msg
+  , scope :: Scope
+  }
 
 
--- | Continue looping with state.
---
--- prop> continue s = pure (Left s)
+-- | The address for an actor. Returned after `spawn`ing an actor or asking for
+-- the current actor's address with `here`. Used to `send` messages to specific
+-- actors.
 --
 -- @since 0.1.0.0
-continue :: s -> Actor msg (Either s a)
-continue s = pure (Left s)
+newtype Address msg = Address (Unagi.InChan msg)
 
 
--- | Exit loop with value.
---
--- prop> exit x = pure (Right x)
+-- | Where messages are delivered. Implicitly provided to `receive` and
+-- `tryReceive` by the `Actor` monad.
 --
 -- @since 0.1.0.0
-exit :: a -> Actor msg (Either s a)
-exit x = pure (Right x)
+newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
+
+
+-- | @since 0.1.0.0
+newtype Scope = Scope (Ki.Scope)
 
 
 -- | Spawn a new actor. Returns the spawned actor's address.
@@ -219,3 +175,47 @@ run actor = do
   liftIO $ Ki.scoped \kiScope -> do
     let scope = Scope kiScope
     runActor ActorEnv{address, mailbox, scope} actor
+
+
+-- | Loop indefinitely with state. Use `Control.Monad.forever` for stateless
+-- infinite loops.
+--
+-- Example:
+--
+-- > counter :: Actor () Int
+-- > counter = loop 10 \count -> do
+-- >   liftIO $ print count
+-- >   if count > 0
+-- >     then continue (count - 1)
+-- >     else exit count
+--
+-- @since 0.1.0.0
+loop
+  :: s
+  -- ^ Initial state
+  -> (s -> Actor msg (Either s a))
+  -- ^ Action to perform, either returning a new state to continue looping, or
+  -- a final value to stop looping.
+  -> Actor msg a
+loop s0 k =
+  k s0 >>= \case
+    Left s -> loop s k
+    Right x -> pure x
+
+
+-- | Continue looping with state.
+--
+-- prop> continue s = pure (Left s)
+--
+-- @since 0.1.0.0
+continue :: s -> Actor msg (Either s a)
+continue s = pure (Left s)
+
+
+-- | Exit loop with value.
+--
+-- prop> exit x = pure (Right x)
+--
+-- @since 0.1.0.0
+exit :: a -> Actor msg (Either s a)
+exit x = pure (Right x)
