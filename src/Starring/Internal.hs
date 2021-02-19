@@ -16,7 +16,7 @@
 module Starring.Internal where
 
 import Control.Monad.IO.Class (MonadIO (..))
-import Control.Monad.Reader (ReaderT (..), asks)
+import Control.Monad.Trans.Reader (ReaderT (..), asks)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
 import qualified Ki
