@@ -8,7 +8,7 @@
 
 -- |
 -- Module:     Starring.Internal
--- Stability:  Experimental
+-- Stability:  experimental
 -- License:    ISC
 -- Copyright:  © 2021 Evan Relf
 -- Maintainer: evan@evanrelf.com
@@ -22,11 +22,18 @@ import qualified Control.Concurrent.Chan.Unagi as Unagi
 import qualified Ki
 
 
--- | @since 0.1.0.0
+-- | The address for an actor. Returned after `spawn`ing an actor or asking for
+-- the current actor's address with `here`. Used to `send` messages to specific
+-- actors.
+--
+-- @since 0.1.0.0
 newtype Address msg = Address (Unagi.InChan msg)
 
 
--- | @since 0.1.0.0
+-- | Where messages are delivered. Implicitly provided to `receive` and
+-- `tryReceive` by the `Actor` monad.
+--
+-- @since 0.1.0.0
 newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
 
 
@@ -34,7 +41,9 @@ newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
 newtype Scope = Scope (Ki.Scope)
 
 
--- | @since 0.1.0.0
+-- | Environment for the `Actor` monad.
+--
+-- @since 0.1.0.0
 data ActorEnv msg = ActorEnv
   { address :: Address msg
   , mailbox :: Mailbox msg
@@ -42,7 +51,10 @@ data ActorEnv msg = ActorEnv
   }
 
 
--- | @since 0.1.0.0
+-- | The `Actor` monad, where you can `spawn` other actors, and `send` and
+-- `receive` messages.
+--
+-- @since 0.1.0.0
 newtype Actor msg a = Actor (ReaderT (ActorEnv msg) IO a)
   deriving newtype
     ( Functor
@@ -139,7 +151,8 @@ wait = do
   liftIO $ Ki.wait kiScope
 
 
--- | Return the current actor's own address.
+-- | Return the current actor's own address. Useful for sending your address to
+-- other actors, or for sending yourself a message.
 --
 -- @since 0.1.0.0
 here :: Actor msg (Address msg)

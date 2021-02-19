@@ -1,6 +1,6 @@
 -- |
 -- Module:     Starring
--- Stability:  Experimental
+-- Stability:  experimental
 -- License:    ISC
 -- Copyright:  © 2021 Evan Relf
 -- Maintainer: evan@evanrelf.com
