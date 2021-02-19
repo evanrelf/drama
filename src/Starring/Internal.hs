@@ -16,7 +16,7 @@
 module Starring.Internal where
 
 import Control.Monad.IO.Class (MonadIO (..))
-import Control.Monad.Reader (MonadReader (..), ReaderT (..), asks)
+import Control.Monad.Reader (ReaderT (..), asks)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
 import qualified Ki
@@ -32,7 +32,6 @@ newtype Actor msg a = Actor (ReaderT (ActorEnv msg) IO a)
     , Applicative
     , Monad
     , MonadIO
-    , MonadReader (ActorEnv msg)
     )
 
 
@@ -83,7 +82,7 @@ spawn actor = do
   let address = Address inChan
   let mailbox = Mailbox outChan
 
-  Scope kiScope <- asks scope
+  Scope kiScope <- Actor $ asks scope
   liftIO $ Ki.fork_ kiScope $ Ki.scoped \childKiScope ->
     let childScope = Scope childKiScope
         childEnv = ActorEnv{address, mailbox, scope = childScope}
@@ -103,7 +102,7 @@ spawn actor = do
 -- @since 0.1.0.0
 wait :: Actor msg ()
 wait = do
-  Scope kiScope <- asks scope
+  Scope kiScope <- Actor $ asks scope
   liftIO $ Ki.wait kiScope
 
 
@@ -112,7 +111,7 @@ wait = do
 --
 -- @since 0.1.0.0
 here :: Actor msg (Address msg)
-here = asks address
+here = Actor $ asks address
 
 
 -- | Given an actor's address, send it a message.
@@ -139,7 +138,7 @@ send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 -- @since 0.1.0.0
 receive :: Actor msg msg
 receive = do
-  Mailbox outChan <- asks mailbox
+  Mailbox outChan <- Actor $ asks mailbox
   liftIO $ Unagi.readChan outChan
 
 
@@ -157,7 +156,7 @@ receive = do
 -- @since 0.1.0.0
 tryReceive :: Actor msg (Maybe msg)
 tryReceive = do
-  Mailbox outChan <- asks mailbox
+  Mailbox outChan <- Actor $ asks mailbox
   (element, _) <- liftIO $ Unagi.tryReadChan outChan
   liftIO $ Unagi.tryRead element
 
