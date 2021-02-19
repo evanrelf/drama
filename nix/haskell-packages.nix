@@ -6,5 +6,6 @@ import ./lib/override-haskell-packages.nix {
   };
   overrides = {
     "ki" = _: { broken = false; };
+    "starring" = _: { doBenchmark = true; };
   };
 } pkgsFinal pkgsPrev

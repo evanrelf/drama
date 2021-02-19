@@ -38,3 +38,13 @@ library
     , Starring
   other-modules:
     , Starring.Demo
+
+
+benchmark bench
+  import: common
+  type: exitcode-stdio-1.0
+  hs-source-dirs: bench
+  main-is: Main.hs
+  build-depends:
+    , criterion ^>= 1.5.9.0
+    , starring

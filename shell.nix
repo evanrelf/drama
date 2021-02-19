@@ -16,6 +16,8 @@ in
   pkgs.haskellPackages.shellFor {
     packages = p: [ p.starring ];
 
+    doBenchmark = true;
+
     withHoogle = true;
 
     buildInputs = [
