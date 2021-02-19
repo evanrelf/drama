@@ -1,4 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
@@ -24,6 +25,14 @@ import Control.Monad.Trans.Reader (ReaderT (..), asks)
 import qualified Control.Concurrent.Chan.Unagi as Unagi
 import qualified Ki
 
+-- Support `MonadFail` on GHC 8.6.5
+#if MIN_VERSION_base(4,9,0)
+import Control.Monad.Fail (MonadFail)
+#endif
+#if MIN_VERSION_base(4,13,0)
+import Prelude hiding (MonadFail)
+#endif
+
 
 -- | The `Actor` monad, where you can `spawn` other actors, and `send` and
 -- `receive` messages.
@@ -36,7 +45,9 @@ newtype Actor msg a = Actor (ReaderT (ActorEnv msg) IO a)
     , Monad
     , MonadIO
     , Alternative
+#if MIN_VERSION_base(4,9,0)
     , MonadPlus
+#endif
     , MonadFail
     , MonadFix
     )
