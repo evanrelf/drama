@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+IFS=$'\n\t'
+
+command -v cabal >/dev/null 2>&1 \
+  || (echo "Missing 'cabal'" >&2; exit 1)
+
+command -v tee >/dev/null 2>&1 \
+  || (echo "Missing 'tee'" >&2; exit 1)
+
+command -v tail >/dev/null 2>&1 \
+  || (echo "Missing 'tail'" >&2; exit 1)
+
+command -v xargs >/dev/null 2>&1 \
+  || (echo "Missing 'xargs'" >&2; exit 1)
+
+if command -v xdg-open >/dev/null 2>&1; then
+  open="xdg-open"
+elif command -v open >/dev/null 2>&1; then
+  open="open"
+else
+  echo "Missing 'open' or 'xdg-open'" >&2
+  exit 1
+fi
+
+cabal haddock -O0 | tee /dev/stderr | tail -n 1 | xargs "${open}"

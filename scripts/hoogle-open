@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+IFS=$'\n\t'
+
+command -v hoogle >/dev/null 2>&1 \
+  || (echo "Missing 'hoogle'" >&2; exit 1)
+
+if command -v xdg-open >/dev/null 2>&1; then
+  open="xdg-open"
+elif command -v open >/dev/null 2>&1; then
+  open="open"
+else
+  echo "Missing 'open' or 'xdg-open'" >&2
+  exit 1
+fi
+
+if [ "$#" -eq 0 ]; then
+  "${open}" "http://localhost:9999"
+  command hoogle server --port 9999 --local
+else
+  command hoogle "$@"
+fi
