@@ -36,9 +36,10 @@ common common
 
 
 common stan
-  ghc-options:
-    -fwrite-ide-info
-    -hiedir=.hie
+  if impl(ghc >= 8.8)
+    ghc-options:
+      -fwrite-ide-info
+      -hiedir=.hie
 
 
 library
