@@ -7,6 +7,16 @@ to the [Haskell Package Versioning Policy][pvp].
 
 ## [Unreleased]
 
+## [0.1.0.3] - 2021-02-20
+
+### Added
+
+- Examples now have their own executable components, separate from the library
+
+### Removed
+
+- Removed `SharedResource` and `Workers` modules from library
+
 ## [0.1.0.2] - 2021-02-20
 
 ### Added
@@ -36,8 +46,9 @@ to the [Haskell Package Versioning Policy][pvp].
 
 Initial release
 
-[Unreleased]: https://github.com/evanrelf/drama/compare/v0.1.0.2...HEAD
-[0.1.0.1]: https://github.com/evanrelf/drama/releases/tag/v0.1.0.2
+[Unreleased]: https://github.com/evanrelf/drama/compare/v0.1.0.3...HEAD
+[0.1.0.3]: https://github.com/evanrelf/drama/releases/tag/v0.1.0.3
+[0.1.0.2]: https://github.com/evanrelf/drama/releases/tag/v0.1.0.2
 [0.1.0.1]: https://github.com/evanrelf/drama/releases/tag/v0.1.0.1
 [0.1.0.0]: https://github.com/evanrelf/drama/releases/tag/v0.1.0.0
 
