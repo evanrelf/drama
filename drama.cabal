@@ -42,6 +42,12 @@ common stan
       -hiedir=.hie
 
 
+flag examples
+  description: Build examples
+  default: False
+  manual: True
+
+
 library
   import: common, stan
   hs-source-dirs: src
@@ -52,6 +58,11 @@ library
   exposed-modules:
     , Drama
     , Drama.Internal
+  if flag(examples)
+    hs-source-dirs: examples
+    exposed-modules:
+      , SharedResource
+      , Workers
 
 
 benchmark bench
