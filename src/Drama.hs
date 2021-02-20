@@ -35,7 +35,11 @@ module Drama
 
     -- * Running your program
   , run
+
+  -- * Re-exports
+  , module Drama.Reexports
   )
 where
 
 import Drama.Internal
+import Drama.Reexports
