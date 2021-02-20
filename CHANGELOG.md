@@ -7,6 +7,21 @@ to the [Haskell Package Versioning Policy][pvp].
 
 ## [Unreleased]
 
+## [0.1.0.2] - 2021-02-20
+
+### Added
+
+- Added examples (only compiled when `examples` flag is enabled)
+- Added `CHANGELOG.md`, `LICENSE`, and `README.md` to `extra-source-files`
+
+### Changed
+
+- Applied suggestions from HLint
+
+### Removed
+
+- Removed `Drama.Demo` module
+
 ## [0.1.0.1] - 2021-02-19
 
 ### Fixed
@@ -21,7 +36,8 @@ to the [Haskell Package Versioning Policy][pvp].
 
 Initial release
 
-[Unreleased]: https://github.com/evanrelf/drama/compare/v0.1.0.1...HEAD
+[Unreleased]: https://github.com/evanrelf/drama/compare/v0.1.0.2...HEAD
+[0.1.0.1]: https://github.com/evanrelf/drama/releases/tag/v0.1.0.2
 [0.1.0.1]: https://github.com/evanrelf/drama/releases/tag/v0.1.0.1
 [0.1.0.0]: https://github.com/evanrelf/drama/releases/tag/v0.1.0.0
 
