@@ -35,17 +35,18 @@ common common
     -fshow-warning-groups
 
 
+common executable
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
+
+
 common stan
   if impl(ghc >= 8.8)
     ghc-options:
       -fwrite-ide-info
       -hiedir=.hie
-
-
-flag examples
-  description: Build examples
-  default: False
-  manual: True
 
 
 library
@@ -58,11 +59,6 @@ library
   exposed-modules:
     , Drama
     , Drama.Internal
-  if flag(examples)
-    hs-source-dirs: examples
-    exposed-modules:
-      , SharedResource
-      , Workers
 
 
 benchmark bench
@@ -73,3 +69,15 @@ benchmark bench
   build-depends:
     , criterion ^>= 1.5.9.0
     , drama
+
+
+executable example-shared-resource
+  import: common, executable, stan
+  main-is: examples/shared-resource.hs
+  build-depends: drama
+
+
+executable example-workers
+  import: common, executable, stan
+  main-is: examples/workers.hs
+  build-depends: drama

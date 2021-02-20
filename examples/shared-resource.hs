@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE NumericUnderscores #-}
 
-module SharedResource (main) where
+module Main (main) where
 
 import Control.Concurrent (threadDelay)
 import Control.Monad (forever)

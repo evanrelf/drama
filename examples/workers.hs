@@ -1,6 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
 
-module Workers (main) where
+module Main (main) where
 
 import Control.Monad (replicateM, when)
 import Control.Monad.IO.Class (MonadIO (..))
