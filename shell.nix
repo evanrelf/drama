@@ -11,8 +11,17 @@ let
     set -Eeuo pipefail
     IFS=$'\n\t'
 
+    if command -v xdg-open >/dev/null 2>&1; then
+      open="xdg-open"
+    elif command -v open >/dev/null 2>&1; then
+      open="open"
+    else
+      echo "Missing `open` or `xdg-open`" >&2
+      exit 1
+    fi
+
     if [ "$#" -eq 0 ]; then
-      open "http://localhost:9999"
+      "$open" "http://localhost:9999"
       command hoogle server --port 9999 --local
     else
       command hoogle "$@"
@@ -25,7 +34,16 @@ let
     set -Eeuo pipefail
     IFS=$'\n\t'
 
-    cabal haddock -O0 | tee /dev/stderr | tail -n 1 | xargs open
+    if command -v xdg-open >/dev/null 2>&1; then
+      open="xdg-open"
+    elif command -v open >/dev/null 2>&1; then
+      open="open"
+    else
+      echo "Missing `open` or `xdg-open`" >&2
+      exit 1
+    fi
+
+    cabal haddock -O0 | tee /dev/stderr | tail -n 1 | xargs "$open"
   '';
 
 in
