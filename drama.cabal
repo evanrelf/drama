@@ -52,8 +52,6 @@ library
   exposed-modules:
     , Drama
     , Drama.Internal
-  other-modules:
-    , Drama.Demo
 
 
 benchmark bench
