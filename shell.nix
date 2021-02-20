@@ -1,15 +1,31 @@
 let
   pkgs = import ./nix/pkgs.nix;
 
-  # Defined as a separate script, instead of a Bash function in `shellHook`, for
-  # compatibility with `lorri` (doesn't support `shellHook`s).
+  # These are defined as a separate scripts, instead of Bash functions in
+  # `shellHook`, for compatibility with `lorri` (`lorri` doesn't support
+  # `shellHook`).
+
   hoogle-open = pkgs.writeShellScriptBin "hoogle-open" ''
+    #!/usr/bin/env bash
+
+    set -Eeuo pipefail
+    IFS=$'\n\t'
+
     if [ "$#" -eq 0 ]; then
       open "http://localhost:9999"
       command hoogle server --port 9999 --local
     else
       command hoogle "$@"
     fi
+  '';
+
+  haddock-open = pkgs.writeShellScriptBin "haddock-open" ''
+    #!/usr/bin/env bash
+
+    set -Eeuo pipefail
+    IFS=$'\n\t'
+
+    cabal haddock -O0 | tee /dev/stderr | tail -n 1 | xargs open
   '';
 
 in
@@ -19,6 +35,7 @@ in
     ];
 
     buildInputs = [
+      haddock-open
       hoogle-open
       pkgs.cabal-install
       pkgs.ghcid
