@@ -25,7 +25,7 @@ benchCounterSummer max = run do
   wait
 
 
-summer :: Int -> Actor Int ()
+summer :: Int -> Process Int ()
 summer max = loop (max, 0) \(count, sum) -> do
   n <- receive
   if count > 0
@@ -33,7 +33,7 @@ summer max = loop (max, 0) \(count, sum) -> do
     else exit ()
 
 
-counter :: Int -> Address Int -> Actor msg ()
+counter :: Int -> Address Int -> Process msg ()
 counter max summerAddress = loop 0 \count -> do
   send summerAddress count
   if count < max

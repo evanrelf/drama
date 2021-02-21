@@ -11,10 +11,10 @@ import Prelude hiding (log)
 
 main :: IO ()
 main = run_ do
-  -- Spawn `logger` actor, which starts waiting for requests.
+  -- Spawn `logger` process, which starts waiting for requests.
   loggerAddress <- spawn logger
 
-  -- Spawn two noisy actors, `fizzBuzz` and `navi`, which want to constantly
+  -- Spawn two noisy processes, `fizzBuzz` and `navi`, which want to constantly
   -- print to the console. Instead of running `putStrLn`, they will send
   -- messages to `logger`.
   spawn_ (fizzBuzz loggerAddress)
@@ -24,17 +24,17 @@ main = run_ do
   wait
 
 
--- | Actor which encapsulates access to the console (a shared resource). By
+-- | Process which encapsulates access to the console (a shared resource). By
 -- sending log messages to `logger`, instead of running `putStrLn` directly, we
--- can avoid interleaving logs from actors running in parallel.
-logger :: Actor String ()
+-- can avoid interleaving logs from processes running in parallel.
+logger :: Process String ()
 logger = forever do
   string <- receive
   liftIO $ putStrLn string
 
 
--- | Silly example actor which wants to print to the console
-fizzBuzz :: Address String -> Actor Void ()
+-- | Silly example process which wants to print to the console
+fizzBuzz :: Address String -> Process Void ()
 fizzBuzz loggerAddress = do
   let log = send loggerAddress
 
@@ -50,8 +50,8 @@ fizzBuzz loggerAddress = do
     continue (n + 1)
 
 
--- | Silly example actor which wants to print to the console
-navi :: Address String -> Actor Void ()
+-- | Silly example process which wants to print to the console
+navi :: Address String -> Process Void ()
 navi loggerAddress = do
   let log = send loggerAddress
 
