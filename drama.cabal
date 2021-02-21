@@ -82,6 +82,12 @@ executable example-shared-resource
   build-depends: drama
 
 
+executable example-state
+  import: common, executable, stan
+  main-is: examples/state.hs
+  build-depends: drama
+
+
 executable example-workers
   import: common, executable, stan
   main-is: examples/workers.hs
