@@ -2,8 +2,8 @@ cabal-version: 3.0
 
 name:        drama
 version:     1.0.0.0
-synopsis:    Simple actor library for Haskell
-description: Simple actor library for Haskell
+synopsis:    Actor library for Haskell
+description: Actor library for Haskell
 category:    Concurrency
 author:      Evan Relf <evan@evanrelf.com>
 maintainer:  Evan Relf <evan@evanrelf.com>
