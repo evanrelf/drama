@@ -1,9 +1,17 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+
+-- For `NotVoid msg`
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 {-# OPTIONS_HADDOCK not-home #-}
 
@@ -21,7 +29,10 @@ import Control.Monad (MonadPlus)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Reader (ReaderT (..), asks)
+import Data.Kind (Constraint)
+import Data.Type.Equality (type (==))
 import Data.Void (Void)
+import GHC.TypeLits (ErrorMessage (..), TypeError)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
 import qualified Ki
@@ -33,6 +44,18 @@ import Control.Monad.Fail (MonadFail)
 #if MIN_VERSION_base(4,13,0)
 import Prelude hiding (MonadFail)
 #endif
+
+
+type family When pred err :: Constraint where
+  When 'True err = err
+  When 'False _ = ()
+
+
+type family VoidError :: Constraint where
+  VoidError = TypeError ('Text "Actors with 'msg ~ Void' cannot receive messages")
+
+
+type NotVoid a = When (a == Void) VoidError
 
 
 -- | The `Actor` monad, where you can `spawn` other actors, and `send` and
@@ -95,7 +118,7 @@ newtype Scope = Scope Ki.Scope
 -- > printerAddress <- spawn printer
 --
 -- @since 0.1.0.0
-spawn :: Actor childMsg () -> Actor msg (Address childMsg)
+spawn :: NotVoid childMsg => Actor childMsg () -> Actor msg (Address childMsg)
 spawn actor = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let address = Address inChan
@@ -144,7 +167,7 @@ wait = do
 -- other actors, or for sending yourself a message.
 --
 -- @since 0.1.0.0
-here :: Actor msg (Address msg)
+here :: NotVoid msg => Actor msg (Address msg)
 here = Actor $ asks address
 
 
@@ -155,7 +178,11 @@ here = Actor $ asks address
 -- > send printerAddress "Hello, world!"
 --
 -- @since 0.1.0.0
-send :: Address recipientMsg -> recipientMsg -> Actor msg ()
+send
+  :: NotVoid recipientMsg
+  => Address recipientMsg
+  -> recipientMsg
+  -> Actor msg ()
 send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 
 
@@ -170,7 +197,7 @@ send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 -- >   liftIO $ putStrLn string
 --
 -- @since 0.1.0.0
-receive :: Actor msg msg
+receive :: NotVoid msg => Actor msg msg
 receive = do
   Mailbox outChan <- Actor $ asks mailbox
   liftIO $ Unagi.readChan outChan
@@ -188,7 +215,7 @@ receive = do
 -- >     Nothing -> ...
 --
 -- @since 0.1.0.0
-tryReceive :: Actor msg (Maybe msg)
+tryReceive :: NotVoid msg => Actor msg (Maybe msg)
 tryReceive = do
   Mailbox outChan <- Actor $ asks mailbox
   (element, _) <- liftIO $ Unagi.tryReadChan outChan
@@ -199,7 +226,7 @@ tryReceive = do
 -- program.
 --
 -- @since 0.1.0.0
-run :: MonadIO m => Actor msg a -> m a
+run :: (NotVoid msg, MonadIO m) => Actor msg a -> m a
 run actor = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let address = Address inChan
