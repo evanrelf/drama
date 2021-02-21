@@ -7,7 +7,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- For `Message msg`
@@ -48,8 +47,8 @@ import Prelude hiding (MonadFail)
 -- | Forbid use of functions which use the underlying `Unagi.Chan` when an
 -- actor's message type is `()` or `Void`.
 --
--- Encourages/forces users to use the more efficient `spawn_` and `run_`
--- functions, and prevents runtime exceptions.
+-- Forces users to use the more efficient `spawn_` and `run_` functions, and
+-- prevents runtime exceptions.
 --
 -- @since 0.1.1.0
 type family Message msg :: Constraint where
