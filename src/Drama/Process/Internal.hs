@@ -77,8 +77,8 @@ newtype Process msg a = Process (ReaderT (ProcessEnv msg) IO a)
 
 
 -- | @since 1.0.0.0
-runProcess :: MonadIO m => ProcessEnv msg -> Process msg a -> m a
-runProcess processEnv (Process m) = liftIO $ runReaderT m processEnv
+processToIO :: MonadIO m => ProcessEnv msg -> Process msg a -> m a
+processToIO processEnv (Process reader) = liftIO $ runReaderT reader processEnv
 
 
 -- | Environment for the `Process` monad.
@@ -130,7 +130,7 @@ spawn process = do
   liftIO $ Ki.fork_ kiScope $ Ki.scoped \childKiScope ->
     let childScope = Scope childKiScope
         childEnv = ProcessEnv{address, mailbox, scope = childScope}
-     in runProcess childEnv process
+     in processToIO childEnv process
 
   pure address
 
@@ -148,7 +148,7 @@ spawn_ process = do
   liftIO $ Ki.fork_ kiScope $ Ki.scoped \childKiScope ->
     let childScope = Scope childKiScope
         childEnv = ProcessEnv{address, mailbox, scope = childScope}
-     in runProcess childEnv process
+     in processToIO childEnv process
 
 
 -- | Wait for all processes spawned by the current process to terminate.
@@ -237,7 +237,7 @@ run process = do
 
   liftIO $ Ki.scoped \kiScope -> do
     let scope = Scope kiScope
-    runProcess ProcessEnv{address, mailbox, scope} process
+    processToIO ProcessEnv{address, mailbox, scope} process
 
 
 -- | More efficient version of `run`, for processes which receive no messages
@@ -251,7 +251,7 @@ run_ process = do
 
   liftIO $ Ki.scoped \kiScope -> do
     let scope = Scope kiScope
-    runProcess ProcessEnv{address, mailbox, scope} process
+    processToIO ProcessEnv{address, mailbox, scope} process
 
 
 -- | Loop indefinitely with state. Use `Control.Monad.forever` for stateless
@@ -268,12 +268,13 @@ run_ process = do
 --
 -- @since 1.0.0.0
 loop
-  :: s
+  :: Monad m
+  => s
   -- ^ Initial state
-  -> (s -> Process msg (Either s a))
+  -> (s -> m (Either s a))
   -- ^ Action to perform, either returning a new state to continue looping, or
   -- a final value to stop looping.
-  -> Process msg a
+  -> m a
 loop s0 k =
   k s0 >>= \case
     Left s -> loop s k
@@ -285,7 +286,7 @@ loop s0 k =
 -- prop> continue s = pure (Left s)
 --
 -- @since 1.0.0.0
-continue :: s -> Process msg (Either s a)
+continue :: Monad m => s -> m (Either s a)
 continue s = pure (Left s)
 
 
@@ -294,5 +295,5 @@ continue s = pure (Left s)
 -- prop> exit x = pure (Right x)
 --
 -- @since 1.0.0.0
-exit :: a -> Process msg (Either s a)
+exit :: Monad m => a -> m (Either s a)
 exit x = pure (Right x)

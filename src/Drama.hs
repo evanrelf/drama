@@ -10,9 +10,13 @@
 
 module Drama
   ( module Drama.Process
+  , module Drama.Server
+
+    -- * Re-exports
   , module Drama.Reexports
   )
 where
 
 import Drama.Process
+import Drama.Server
 import Drama.Reexports
