@@ -6,11 +6,14 @@ module Main (main) where
 
 import Data.IORef (modifyIORef, newIORef, readIORef, writeIORef)
 import Drama
-import Drama.Server.Internal (Server (..))
+
 
 main :: IO ()
-main = do
-  undefined
+main = run_ do
+  counterAddress <- spawn counter
+  cast counterAddress (Increment 42)
+  count <- call counterAddress GetCount
+  liftIO $ print count
 
 
 data CounterMsg res where
@@ -20,7 +23,7 @@ data CounterMsg res where
 
 counter :: Server CounterMsg ()
 counter = do
-  stateAddress <- start $ state (0 :: Int)
+  stateAddress <- spawn $ state (0 :: Int)
 
   forever $ handle \case
     Increment n ->
