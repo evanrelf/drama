@@ -47,7 +47,11 @@ cast addr msg = do
 -- | TODO
 --
 -- @since 1.0.0.0
-call :: NotVoid res => Address (Envelope recipientMsg) -> recipientMsg res -> Process msg res
+call
+  :: NotVoid res
+  => Address (Envelope recipientMsg)
+  -> recipientMsg res
+  -> Process msg res
 call addr msg = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let returnAddr = Address inChan
