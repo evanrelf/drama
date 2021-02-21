@@ -68,10 +68,10 @@ newtype Process msg a = Process (ReaderT (ProcessEnv msg) IO a)
     , Monad
     , MonadIO
     , Alternative
-#if MIN_VERSION_base(4,9,0)
     , MonadPlus
-#endif
+#if MIN_VERSION_base(4,9,0)
     , MonadFail
+#endif
     , MonadFix
     )
 
