@@ -18,6 +18,8 @@ module Drama.Process
 
     -- * Messages
 
+  , NotVoid
+
     -- ** Addresses
   , Address
   , here

@@ -9,7 +9,6 @@ module Main (main) where
 import Control.Monad (when)
 import Data.IORef (modifyIORef, newIORef, readIORef, writeIORef)
 import Drama
-import Drama.Process.Internal (NotVoid)
 import System.Exit (exitSuccess)
 
 

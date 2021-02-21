@@ -43,11 +43,7 @@ import Prelude hiding (MonadFail)
 #endif
 
 
--- | Forbid use of functions which use the underlying `Unagi.Chan` when a
--- process' message type is `()` or `Void`.
---
--- Forces users to use the more efficient `spawn_` and `run_` functions, and
--- prevents runtime exceptions.
+-- | TODO
 --
 -- @since 1.0.0.0
 type family NotVoid msg :: Constraint where
