@@ -11,7 +11,6 @@
 module Drama.Server
   ( Server
   , Envelope
-  , start
   , cast
   , call
   , handle
