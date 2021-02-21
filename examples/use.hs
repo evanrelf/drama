@@ -41,6 +41,8 @@ counter count0 = do
 data UseCounter = UseCounter
   { increment :: forall msg. Int -> Process msg ()
   , decrement :: forall msg. Int -> Process msg ()
+  , (+=) :: forall msg. Int -> Process msg ()
+  , (-=) :: forall msg. Int -> Process msg ()
   , getCount :: forall msg. Process msg Int
   }
 
@@ -52,6 +54,8 @@ useCounter count0 = do
   pure UseCounter
     { increment = \n -> cast counterAddr (Increment n)
     , decrement = \n -> cast counterAddr (Decrement n)
+    , (+=) = \n -> cast counterAddr (Increment n)
+    , (-=) = \n -> cast counterAddr (Decrement n)
     , getCount = call counterAddr GetCount
     }
 
