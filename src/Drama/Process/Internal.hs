@@ -155,8 +155,8 @@ spawn_ process = do
 --
 -- Example:
 --
--- > fooAddress <- spawn foo
--- > barAddress <- spawn bar
+-- > fooAddr <- spawn foo
+-- > barAddr <- spawn bar
 -- > wait
 --
 -- @since 1.0.0.0

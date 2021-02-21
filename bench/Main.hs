@@ -20,8 +20,8 @@ main = defaultMainWith defaultConfig{timeLimit = 30, verbosity = Verbose}
 
 benchCounterSummer :: Int -> IO ()
 benchCounterSummer max = run do
-  summerAddress <- spawn (summer max)
-  _ <- spawn (counter max summerAddress)
+  summerAddr <- spawn (summer max)
+  _ <- spawn (counter max summerAddr)
   wait
 
 
@@ -34,8 +34,8 @@ summer max = loop (max, 0) \(count, sum) -> do
 
 
 counter :: Int -> Address Int -> Process msg ()
-counter max summerAddress = loop 0 \count -> do
-  send summerAddress count
+counter max summerAddr = loop 0 \count -> do
+  send summerAddr count
   if count < max
     then continue (count + 1)
     else exit ()

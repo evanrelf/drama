@@ -10,9 +10,9 @@ import Drama
 
 main :: IO ()
 main = run_ do
-  counterAddress <- spawn counter
-  cast counterAddress (Increment 42)
-  count <- call counterAddress GetCount
+  counterAddr <- spawn counter
+  cast counterAddr (Increment 42)
+  count <- call counterAddr GetCount
   liftIO $ print count
 
 
@@ -23,14 +23,14 @@ data CounterMsg res where
 
 counter :: Server CounterMsg ()
 counter = do
-  stateAddress <- spawn $ state (0 :: Int)
+  stateAddr <- spawn $ state (0 :: Int)
 
   forever $ handle \case
     Increment n ->
-      cast stateAddress (ModifyState (+ n))
+      cast stateAddr (ModifyState (+ n))
 
     GetCount ->
-      call stateAddress GetState
+      call stateAddr GetState
 
 
 data StateMsg s res where
