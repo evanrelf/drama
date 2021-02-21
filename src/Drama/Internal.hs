@@ -133,7 +133,7 @@ spawn actor = do
 
 
 -- | More efficient version of `spawn`, for actors which receive no messages
--- (`msg ~ Void`). See docs for `spawn` for more information.
+-- (@msg ~ `Void`@). See docs for `spawn` for more information.
 --
 -- @since 0.2.0.0
 spawn_ :: Actor Void () -> Actor msg ()
@@ -238,7 +238,7 @@ run actor = do
 
 
 -- | More efficient version of `run`, for actors which receive no messages
--- (`msg ~ Void`). See docs for `run` for more information.
+-- (@msg ~ `Void`@). See docs for `run` for more information.
 --
 -- @since 0.2.0.0
 run_ :: MonadIO m => Actor Void a -> m a
