@@ -133,7 +133,8 @@ spawn actor = do
   pure address
 
 
--- | TODO
+-- | More efficient version of `spawn`, for actors which receive no messages
+-- (`msg ~ Void`). See docs for `spawn` for more information.
 --
 -- @since 0.1.1.0
 spawn_ :: Actor Void () -> Actor msg ()
@@ -237,7 +238,8 @@ run actor = do
     runActor ActorEnv{address, mailbox, scope} actor
 
 
--- | TODO
+-- | More efficient version of `run`, for actors which receive no messages
+-- (`msg ~ Void`). See docs for `run` for more information.
 --
 -- @since 0.1.1.0
 run_ :: MonadIO m => Actor Void a -> m a
