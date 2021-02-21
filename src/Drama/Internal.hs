@@ -50,7 +50,7 @@ import Prelude hiding (MonadFail)
 -- Forces users to use the more efficient `spawn_` and `run_` functions, and
 -- prevents runtime exceptions.
 --
--- @since 0.1.1.0
+-- @since 0.2.0.0
 type family Message msg :: Constraint where
   Message Void = TypeError ('Text "Actors with 'msg ~ Void' cannot receive messages")
   Message () = TypeError ('Text "Use 'msg ~ Void' instead of 'msg ~ ()' for actors which do not receive messages")
@@ -135,7 +135,7 @@ spawn actor = do
 -- | More efficient version of `spawn`, for actors which receive no messages
 -- (`msg ~ Void`). See docs for `spawn` for more information.
 --
--- @since 0.1.1.0
+-- @since 0.2.0.0
 spawn_ :: Actor Void () -> Actor msg ()
 spawn_ actor = do
   let address = Address (error "unreachable")
@@ -240,7 +240,7 @@ run actor = do
 -- | More efficient version of `run`, for actors which receive no messages
 -- (`msg ~ Void`). See docs for `run` for more information.
 --
--- @since 0.1.1.0
+-- @since 0.2.0.0
 run_ :: MonadIO m => Actor Void a -> m a
 run_ actor = do
   let address = Address (error "unreachable")
