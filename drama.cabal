@@ -76,15 +76,15 @@ benchmark bench
     , drama
 
 
-executable example-servers
-  import: common, executable, stan
-  main-is: examples/servers.hs
-  build-depends: drama
-
-
 executable example-shared-resource
   import: common, executable, stan
   main-is: examples/shared-resource.hs
+  build-depends: drama
+
+
+executable example-use
+  import: common, executable, stan
+  main-is: examples/use.hs
   build-depends: drama
 
 
