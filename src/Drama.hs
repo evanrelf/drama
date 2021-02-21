@@ -9,39 +9,10 @@
 --
 
 module Drama
-  ( Actor
-
-    -- * Spawning actors
-  , spawn
-  , spawn_
-  , wait
-
-    -- * Messages
-
-    -- ** Addresses
-  , Address
-  , here
-
-    -- ** Sending messages
-  , send
-
-    -- ** Receiving messages
-  , receive
-  , tryReceive
-
-    -- * Managing state
-  , loop
-  , continue
-  , exit
-
-    -- * Running your program
-  , run
-  , run_
-
-  -- * Re-exports
+  ( module Drama.Process
   , module Drama.Reexports
   )
 where
 
-import Drama.Internal
+import Drama.Process
 import Drama.Reexports

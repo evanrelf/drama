@@ -7,6 +7,10 @@ to the [Haskell Package Versioning Policy][pvp].
 
 ## [Unreleased]
 
+### Changed
+
+- Renamed "actor" to "process"
+
 ## [0.2.0.0] - 2021-02-20
 
 ### Added

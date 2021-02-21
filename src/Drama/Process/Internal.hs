@@ -15,13 +15,13 @@
 {-# OPTIONS_HADDOCK not-home #-}
 
 -- |
--- Module:     Drama.Internal
+-- Module:     Drama.Process.Internal
 -- Stability:  experimental
 -- License:    BSD-3-Clause
 -- Copyright:  © 2021 Evan Relf
 -- Maintainer: evan@evanrelf.com
 
-module Drama.Internal where
+module Drama.Process.Internal where
 
 import Control.Applicative (Alternative)
 import Control.Monad (MonadPlus)
@@ -44,24 +44,24 @@ import Prelude hiding (MonadFail)
 #endif
 
 
--- | Forbid use of functions which use the underlying `Unagi.Chan` when an
--- actor's message type is `()` or `Void`.
+-- | Forbid use of functions which use the underlying `Unagi.Chan` when a
+-- process' message type is `()` or `Void`.
 --
 -- Forces users to use the more efficient `spawn_` and `run_` functions, and
 -- prevents runtime exceptions.
 --
--- @since 0.2.0.0
+-- @since 1.0.0.0
 type family Message msg :: Constraint where
-  Message Void = TypeError ('Text "Actors with 'msg ~ Void' cannot receive messages")
-  Message () = TypeError ('Text "Use 'msg ~ Void' instead of 'msg ~ ()' for actors which do not receive messages")
+  Message Void = TypeError ('Text "Processes with 'msg ~ Void' cannot receive messages")
+  Message () = TypeError ('Text "Use 'msg ~ Void' instead of 'msg ~ ()' for processes which do not receive messages")
   Message msg = ()
 
 
--- | The `Actor` monad, where you can `spawn` other actors, and `send` and
+-- | The `Process` monad, where you can `spawn` other processes, and `send` and
 -- `receive` messages.
 --
--- @since 0.1.0.0
-newtype Actor msg a = Actor (ReaderT (ActorEnv msg) IO a)
+-- @since 1.0.0.0
+newtype Process msg a = Process (ReaderT (ProcessEnv msg) IO a)
   deriving newtype
     ( Functor
     , Applicative
@@ -76,79 +76,82 @@ newtype Actor msg a = Actor (ReaderT (ActorEnv msg) IO a)
     )
 
 
--- | @since 0.1.0.0
-runActor :: MonadIO m => ActorEnv msg -> Actor msg a -> m a
-runActor actorEnv (Actor m) = liftIO $ runReaderT m actorEnv
+-- | @since 1.0.0.0
+runProcess :: MonadIO m => ProcessEnv msg -> Process msg a -> m a
+runProcess processEnv (Process m) = liftIO $ runReaderT m processEnv
 
 
--- | Environment for the `Actor` monad.
+-- | Environment for the `Process` monad.
 --
--- @since 0.1.0.0
-data ActorEnv msg = ActorEnv
+-- @since 1.0.0.0
+data ProcessEnv msg = ProcessEnv
   { address :: Address msg
   , mailbox :: Mailbox msg
   , scope :: Scope
   }
 
 
--- | The address for an actor. Returned after `spawn`ing an actor or asking for
--- the current actor's address with `here`. Used to `send` messages to specific
--- actors.
+-- | The address for a process. Returned after `spawn`ing a process or asking
+-- for the current process' address with `here`. Used to `send` messages to
+-- specific processes.
 --
--- @since 0.1.0.0
+-- @since 1.0.0.0
 newtype Address msg = Address (Unagi.InChan msg)
 
 
 -- | Where messages are delivered. Implicitly provided to `receive` and
--- `tryReceive` by the `Actor` monad.
+-- `tryReceive` by the `Process` monad.
 --
--- @since 0.1.0.0
+-- @since 1.0.0.0
 newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
 
 
--- | @since 0.1.0.0
+-- | @since 1.0.0.0
 newtype Scope = Scope Ki.Scope
 
 
--- | Spawn a new actor. Returns the spawned actor's address.
+-- | Spawn a new process. Returns the spawned process' address.
 --
 -- Example:
 --
 -- > printerAddress <- spawn printer
 --
--- @since 0.1.0.0
-spawn :: Message childMsg => Actor childMsg () -> Actor msg (Address childMsg)
-spawn actor = do
+-- @since 1.0.0.0
+spawn
+  :: Message childMsg
+  => Process childMsg ()
+  -> Process msg (Address childMsg)
+spawn process = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let address = Address inChan
   let mailbox = Mailbox outChan
 
-  Scope kiScope <- Actor $ asks scope
+  Scope kiScope <- Process $ asks scope
   liftIO $ Ki.fork_ kiScope $ Ki.scoped \childKiScope ->
     let childScope = Scope childKiScope
-        childEnv = ActorEnv{address, mailbox, scope = childScope}
-     in runActor childEnv actor
+        childEnv = ProcessEnv{address, mailbox, scope = childScope}
+     in runProcess childEnv process
 
   pure address
 
 
--- | More efficient version of `spawn`, for actors which receive no messages
+-- | More efficient version of `spawn`, for processes which receive no messages
 -- (@msg ~ `Void`@). See docs for `spawn` for more information.
 --
--- @since 0.2.0.0
-spawn_ :: Actor Void () -> Actor msg ()
-spawn_ actor = do
+-- @since 1.0.0.0
+spawn_ :: Process Void () -> Process msg ()
+spawn_ process = do
   let address = Address (error "unreachable")
   let mailbox = Mailbox (error "unreachable")
 
-  Scope kiScope <- Actor $ asks scope
+  Scope kiScope <- Process $ asks scope
   liftIO $ Ki.fork_ kiScope $ Ki.scoped \childKiScope ->
     let childScope = Scope childKiScope
-        childEnv = ActorEnv{address, mailbox, scope = childScope}
-     in runActor childEnv actor
+        childEnv = ProcessEnv{address, mailbox, scope = childScope}
+     in runProcess childEnv process
 
 
--- | Wait for all actors spawned by the current actor to terminate.
+-- | Wait for all processes spawned by the current process to terminate.
 --
 -- Example:
 --
@@ -156,99 +159,99 @@ spawn_ actor = do
 -- > barAddress <- spawn bar
 -- > wait
 --
--- @since 0.1.0.0
-wait :: Actor msg ()
+-- @since 1.0.0.0
+wait :: Process msg ()
 wait = do
-  Scope kiScope <- Actor $ asks scope
+  Scope kiScope <- Process $ asks scope
   liftIO $ Ki.wait kiScope
 
 
--- | Return the current actor's own address. Useful for sending your address to
--- other actors, or for sending yourself a message.
+-- | Return the current process' own address. Useful for sending your address to
+-- other processes, or for sending yourself a message.
 --
--- @since 0.1.0.0
-here :: Message msg => Actor msg (Address msg)
-here = Actor $ asks address
+-- @since 1.0.0.0
+here :: Message msg => Process msg (Address msg)
+here = Process $ asks address
 
 
--- | Given an actor's address, send it a message.
+-- | Given a process' address, send it a message.
 --
 -- Example:
 --
 -- > send printerAddress "Hello, world!"
 --
--- @since 0.1.0.0
+-- @since 1.0.0.0
 send
   :: Message recipientMsg
   => Address recipientMsg
   -> recipientMsg
-  -> Actor msg ()
+  -> Process msg ()
 send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 
 
--- | Receive a message sent to the actor's mailbox. This function blocks until
+-- | Receive a message sent to the process' mailbox. This function blocks until
 -- a message is received.
 --
 -- Example:
 --
--- > printer :: Actor String ()
+-- > printer :: Process String ()
 -- > printer = forever do
 -- >   string <- receive
 -- >   liftIO $ putStrLn string
 --
--- @since 0.1.0.0
-receive :: Message msg => Actor msg msg
+-- @since 1.0.0.0
+receive :: Message msg => Process msg msg
 receive = do
-  Mailbox outChan <- Actor $ asks mailbox
+  Mailbox outChan <- Process $ asks mailbox
   liftIO $ Unagi.readChan outChan
 
 
--- | Receive a message sent to the actor's mailbox. This function blocks until
+-- | Receive a message sent to the process' mailbox. This function blocks until
 -- a message is received.
 --
 -- Example:
 --
--- > printer :: Actor String ()
+-- > printer :: Process String ()
 -- > printer = forever do
 -- >   tryReceive >>= \case
 -- >     Just string -> liftIO $ putStrLn string
 -- >     Nothing -> ...
 --
--- @since 0.1.0.0
-tryReceive :: Message msg => Actor msg (Maybe msg)
+-- @since 1.0.0.0
+tryReceive :: Message msg => Process msg (Maybe msg)
 tryReceive = do
-  Mailbox outChan <- Actor $ asks mailbox
+  Mailbox outChan <- Process $ asks mailbox
   (element, _) <- liftIO $ Unagi.tryReadChan outChan
   liftIO $ Unagi.tryRead element
 
 
--- | Run a top-level actor. Intended to be used at the entry point of your
+-- | Run a top-level process. Intended to be used at the entry point of your
 -- program.
 --
--- @since 0.1.0.0
-run :: (Message msg, MonadIO m) => Actor msg a -> m a
-run actor = do
+-- @since 1.0.0.0
+run :: (Message msg, MonadIO m) => Process msg a -> m a
+run process = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let address = Address inChan
   let mailbox = Mailbox outChan
 
   liftIO $ Ki.scoped \kiScope -> do
     let scope = Scope kiScope
-    runActor ActorEnv{address, mailbox, scope} actor
+    runProcess ProcessEnv{address, mailbox, scope} process
 
 
--- | More efficient version of `run`, for actors which receive no messages
+-- | More efficient version of `run`, for processes which receive no messages
 -- (@msg ~ `Void`@). See docs for `run` for more information.
 --
--- @since 0.2.0.0
-run_ :: MonadIO m => Actor Void a -> m a
-run_ actor = do
+-- @since 1.0.0.0
+run_ :: MonadIO m => Process Void a -> m a
+run_ process = do
   let address = Address (error "unreachable")
   let mailbox = Mailbox (error "unreachable")
 
   liftIO $ Ki.scoped \kiScope -> do
     let scope = Scope kiScope
-    runActor ActorEnv{address, mailbox, scope} actor
+    runProcess ProcessEnv{address, mailbox, scope} process
 
 
 -- | Loop indefinitely with state. Use `Control.Monad.forever` for stateless
@@ -256,21 +259,21 @@ run_ actor = do
 --
 -- Example:
 --
--- > counter :: Actor () Int
+-- > counter :: Process () Int
 -- > counter = loop 10 \count -> do
 -- >   liftIO $ print count
 -- >   if count > 0
 -- >     then continue (count - 1)
 -- >     else exit count
 --
--- @since 0.1.0.0
+-- @since 1.0.0.0
 loop
   :: s
   -- ^ Initial state
-  -> (s -> Actor msg (Either s a))
+  -> (s -> Process msg (Either s a))
   -- ^ Action to perform, either returning a new state to continue looping, or
   -- a final value to stop looping.
-  -> Actor msg a
+  -> Process msg a
 loop s0 k =
   k s0 >>= \case
     Left s -> loop s k
@@ -281,8 +284,8 @@ loop s0 k =
 --
 -- prop> continue s = pure (Left s)
 --
--- @since 0.1.0.0
-continue :: s -> Actor msg (Either s a)
+-- @since 1.0.0.0
+continue :: s -> Process msg (Either s a)
 continue s = pure (Left s)
 
 
@@ -290,6 +293,6 @@ continue s = pure (Left s)
 --
 -- prop> exit x = pure (Right x)
 --
--- @since 0.1.0.0
-exit :: a -> Actor msg (Either s a)
+-- @since 1.0.0.0
+exit :: a -> Process msg (Either s a)
 exit x = pure (Right x)

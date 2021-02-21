@@ -9,7 +9,7 @@ import Drama
 
 main :: IO ()
 main = run do
-  -- Spawn `fib` actor, which starts waiting for requests.
+  -- Spawn `fib` process, which starts waiting for requests.
   fibAddress <- spawn fib
 
   -- Request fibonacci numbers from `fib`. `fib` will spawn three `fibWorker`s
@@ -30,8 +30,8 @@ main = run do
   wait
 
 
--- | Actor which immediately spawns and delegates to "worker" actors.
-fib :: Actor (Address (Int, Integer), Int) ()
+-- | Process which immediately spawns and delegates to "worker" processes.
+fib :: Process (Address (Int, Integer), Int) ()
 fib = do
   (responseAddress, n) <- receive
   when (n >= 0) do
@@ -39,8 +39,8 @@ fib = do
     fib
 
 
--- | "Worker" actor responsible for doing the real, time-consuming work.
-fibWorker :: Address (Int, Integer) -> Int -> Actor Void ()
+-- | "Worker" process responsible for doing the real, time-consuming work.
+fibWorker :: Address (Int, Integer) -> Int -> Process Void ()
 fibWorker responseAddress n = send responseAddress (n, fibs !! n)
 
 
