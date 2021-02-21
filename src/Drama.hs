@@ -5,7 +5,7 @@
 -- Copyright:  © 2021 Evan Relf
 -- Maintainer: evan@evanrelf.com
 --
--- Simple actor library for Haskell
+-- Actor library for Haskell
 --
 
 module Drama
