@@ -13,6 +13,7 @@ module Drama
 
     -- * Spawning actors
   , spawn
+  , spawn_
   , wait
 
     -- * Messages
@@ -35,6 +36,7 @@ module Drama
 
     -- * Running your program
   , run
+  , run_
 
   -- * Re-exports
   , module Drama.Reexports
