@@ -10,15 +10,15 @@ import Prelude hiding (log)
 
 
 main :: IO ()
-main = run do
+main = run_ do
   -- Spawn `logger` actor, which starts waiting for requests.
   loggerAddress <- spawn logger
 
   -- Spawn two noisy actors, `fizzBuzz` and `navi`, which want to constantly
   -- print to the console. Instead of running `putStrLn`, they will send
   -- messages to `logger`.
-  _ <- spawn (fizzBuzz loggerAddress)
-  _ <- spawn (navi loggerAddress)
+  spawn_ (fizzBuzz loggerAddress)
+  spawn_ (navi loggerAddress)
 
   -- Block `main` thread forever.
   wait
@@ -34,7 +34,7 @@ logger = forever do
 
 
 -- | Silly example actor which wants to print to the console
-fizzBuzz :: Address String -> Actor () ()
+fizzBuzz :: Address String -> Actor Void ()
 fizzBuzz loggerAddress = do
   let log = send loggerAddress
 
@@ -51,7 +51,7 @@ fizzBuzz loggerAddress = do
 
 
 -- | Silly example actor which wants to print to the console
-navi :: Address String -> Actor () ()
+navi :: Address String -> Actor Void ()
 navi loggerAddress = do
   let log = send loggerAddress
 

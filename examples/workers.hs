@@ -35,12 +35,12 @@ fib :: Actor (Address (Int, Integer), Int) ()
 fib = do
   (responseAddress, n) <- receive
   when (n >= 0) do
-    _ <- spawn (fibWorker responseAddress n)
+    spawn_ (fibWorker responseAddress n)
     fib
 
 
 -- | "Worker" actor responsible for doing the real, time-consuming work.
-fibWorker :: Address (Int, Integer) -> Int -> Actor () ()
+fibWorker :: Address (Int, Integer) -> Int -> Actor Void ()
 fibWorker responseAddress n = send responseAddress (n, fibs !! n)
 
 

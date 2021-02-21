@@ -21,6 +21,7 @@ import Control.Monad (MonadPlus)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Reader (ReaderT (..), asks)
+import Data.Void (Void)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
 import qualified Ki
@@ -109,6 +110,21 @@ spawn actor = do
   pure address
 
 
+-- | TODO
+--
+-- @since 0.1.1.0
+spawn_ :: Actor Void () -> Actor msg ()
+spawn_ actor = do
+  let address = Address (error "unreachable")
+  let mailbox = Mailbox (error "unreachable")
+
+  Scope kiScope <- Actor $ asks scope
+  liftIO $ Ki.fork_ kiScope $ Ki.scoped \childKiScope ->
+    let childScope = Scope childKiScope
+        childEnv = ActorEnv{address, mailbox, scope = childScope}
+     in runActor childEnv actor
+
+
 -- | Wait for all actors spawned by the current actor to terminate.
 --
 -- Example:
@@ -188,6 +204,19 @@ run actor = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let address = Address inChan
   let mailbox = Mailbox outChan
+
+  liftIO $ Ki.scoped \kiScope -> do
+    let scope = Scope kiScope
+    runActor ActorEnv{address, mailbox, scope} actor
+
+
+-- | TODO
+--
+-- @since 0.1.1.0
+run_ :: MonadIO m => Actor Void a -> m a
+run_ actor = do
+  let address = Address (error "unreachable")
+  let mailbox = Mailbox (error "unreachable")
 
   liftIO $ Ki.scoped \kiScope -> do
     let scope = Scope kiScope
