@@ -12,13 +12,13 @@ import Prelude hiding (log)
 main :: IO ()
 main = run_ do
   -- Spawn `logger` process, which starts waiting for requests.
-  loggerAddress <- spawn logger
+  loggerAddr <- spawn logger
 
   -- Spawn two noisy processes, `fizzBuzz` and `navi`, which want to constantly
   -- print to the console. Instead of running `putStrLn`, they will send
   -- messages to `logger`.
-  spawn_ (fizzBuzz loggerAddress)
-  spawn_ (navi loggerAddress)
+  spawn_ (fizzBuzz loggerAddr)
+  spawn_ (navi loggerAddr)
 
   -- Block `main` thread forever.
   wait
@@ -35,8 +35,8 @@ logger = forever do
 
 -- | Silly example process which wants to print to the console
 fizzBuzz :: Address String -> Process Void ()
-fizzBuzz loggerAddress = do
-  let log = send loggerAddress
+fizzBuzz loggerAddr = do
+  let log = send loggerAddr
 
   loop (0 :: Int) \n -> do
     if | n `mod` 15 == 0 -> log "FizzBuzz"
@@ -52,8 +52,8 @@ fizzBuzz loggerAddress = do
 
 -- | Silly example process which wants to print to the console
 navi :: Address String -> Process Void ()
-navi loggerAddress = do
-  let log = send loggerAddress
+navi loggerAddr = do
+  let log = send loggerAddr
 
   forever do
     log "Hey, listen!"

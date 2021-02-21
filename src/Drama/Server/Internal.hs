@@ -40,8 +40,8 @@ data Envelope msg
 --
 -- @since 1.0.0.0
 cast :: Address (Envelope recipientMsg) -> recipientMsg () -> Process msg ()
-cast address message = do
-  send address (Cast message)
+cast addr msg = do
+  send addr (Cast msg)
 
 
 -- | TODO
@@ -50,8 +50,8 @@ cast address message = do
 call :: NotVoid res => Address (Envelope recipientMsg) -> recipientMsg res -> Process msg res
 call addr msg = do
   (inChan, outChan) <- liftIO Unagi.newChan
-  let returnAddress = Address inChan
-  send address (Call returnAddress message)
+  let returnAddr = Address inChan
+  send addr (Call returnAddr msg)
   liftIO $ Unagi.readChan outChan
 
 
@@ -64,6 +64,6 @@ handle callback = do
   case envelope of
     Cast msg ->
       callback msg
-    Call returnAddress msg -> do
+    Call returnAddr msg -> do
       res <- callback msg
-      send returnAddress res
+      send returnAddr res
