@@ -25,12 +25,15 @@ counter :: Server CounterMsg ()
 counter = do
   stateAddr <- spawn $ state (0 :: Int)
 
-  forever $ handle \case
-    Increment n ->
-      cast stateAddr (ModifyState (+ n))
+  let modify :: (Int -> Int) -> Process msg ()
+      modify f = cast stateAddr (ModifyState f)
 
-    GetCount ->
-      call stateAddr GetState
+  let get :: Process msg Int
+      get = call stateAddr GetState
+
+  forever $ handle \case
+    Increment n -> modify (+ n)
+    GetCount -> get
 
 
 data StateMsg s res where
