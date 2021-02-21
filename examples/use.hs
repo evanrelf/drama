@@ -6,17 +6,29 @@
 
 module Main (main) where
 
+import Control.Monad (when)
 import Data.IORef (modifyIORef, newIORef, readIORef, writeIORef)
 import Drama
 import Drama.Process.Internal (NotVoid)
+import System.Exit (exitSuccess)
 
 
 main :: IO ()
 main = run_ do
-  UseCounter{increment, getCount} <- useCounter 0
-  increment 42
-  count <- getCount
-  liftIO $ print count
+  bottles <- useCounter 99
+
+  forever do
+    n <- getCount bottles
+
+    when (n <= 0) do
+      liftIO $ exitSuccess
+
+    liftIO $ putStrLn (show n <> " bottle(s) of beer on the wall, " <> show n <> " bottle(s) of beer")
+
+    bottles -= 1
+    n' <- getCount bottles
+
+    liftIO $ putStrLn ("Take one down and pass it around, " <> show n' <> " bottle(s) of beer")
 
 
 --------------------------------------------------------------------------------
