@@ -1,6 +1,5 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -141,8 +140,8 @@ spawn process = do
 -- @since 1.0.0.0
 spawn_ :: Process Void () -> Process msg ()
 spawn_ process = do
-  let address = Address (error "unreachable")
-  let mailbox = Mailbox (error "unreachable")
+  let address = Address (error voidMsgError)
+  let mailbox = Mailbox (error voidMsgError)
 
   Scope kiScope <- Process $ asks scope
   liftIO $ Ki.fork_ kiScope $ Ki.scoped \childKiScope ->
@@ -246,8 +245,8 @@ run process = do
 -- @since 1.0.0.0
 run_ :: MonadIO m => Process Void a -> m a
 run_ process = do
-  let address = Address (error "unreachable")
-  let mailbox = Mailbox (error "unreachable")
+  let address = Address (error voidMsgError)
+  let mailbox = Mailbox (error voidMsgError)
 
   liftIO $ Ki.scoped \kiScope -> do
     let scope = Scope kiScope
@@ -297,3 +296,17 @@ continue s = pure (Left s)
 -- @since 1.0.0.0
 exit :: Monad m => a -> m (Either s a)
 exit x = pure (Right x)
+
+
+voidMsgError :: String
+voidMsgError = unlines . fmap unwords $
+  [ ["[!] drama internal error"]
+  , []
+  , [ "Attempted to use the address or mailbox of a process which cannot send"
+    , "or receive messages (msg ~ Void)."
+    ]
+  , [ "This should be impossible using non-internal modules!" ]
+  , []
+  , [ "Please report this issue at https://github.com/evanrelf/drama/issues"
+    ]
+  ]
