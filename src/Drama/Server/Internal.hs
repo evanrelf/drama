@@ -16,40 +16,16 @@
 
 module Drama.Server.Internal where
 
-import Control.Applicative (Alternative)
-import Control.Monad (MonadPlus)
-import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
-import Drama.Process
+import Drama.Process (Process, receive, send)
 import Drama.Process.Internal (Address (..), Message)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
 
--- Support `MonadFail` on GHC 8.6.5
-#if MIN_VERSION_base(4,9,0)
-import Control.Monad.Fail (MonadFail)
-#endif
-#if MIN_VERSION_base(4,13,0)
-import Prelude hiding (MonadFail)
-#endif
-
-
 -- | TODO
 --
 -- @since 1.0.0.0
-newtype Server msg a = Server { serverToProcess :: Process (Envelope msg) a }
-  deriving newtype
-    ( Functor
-    , Applicative
-    , Monad
-    , MonadIO
-    , Alternative
-#if MIN_VERSION_base(4,9,0)
-    , MonadPlus
-#endif
-    , MonadFail
-    , MonadFix
-    )
+type Server msg a = Process (Envelope msg) a
 
 
 -- | TODO
@@ -63,23 +39,16 @@ data Envelope msg
 -- | TODO
 --
 -- @since 1.0.0.0
-start :: Server childMsg () -> Server msg (Address (Envelope childMsg))
-start (Server process) = Server $ spawn process
-
-
--- | TODO
---
--- @since 1.0.0.0
-cast :: Address (Envelope recipientMsg) -> recipientMsg () -> Server msg ()
-cast address message = Server do
+cast :: Address (Envelope recipientMsg) -> recipientMsg () -> Process msg ()
+cast address message = do
   send address (Cast message)
 
 
 -- | TODO
 --
 -- @since 1.0.0.0
-call :: Message res => Address (Envelope recipientMsg) -> recipientMsg res -> Server msg res
-call address message = Server do
+call :: Message res => Address (Envelope recipientMsg) -> recipientMsg res -> Process msg res
+call address message = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let returnAddress = Address inChan
   send address (Call returnAddress message)
@@ -91,10 +60,10 @@ call address message = Server do
 -- @since 1.0.0.0
 handle :: (forall res. msg res -> Server msg res) -> Server msg ()
 handle callback = do
-  envelope <- Server receive
+  envelope <- receive
   case envelope of
     Cast msg ->
       callback msg
     Call returnAddress msg -> do
       res <- callback msg
-      Server $ send returnAddress res
+      send returnAddress res
