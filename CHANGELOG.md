@@ -7,6 +7,18 @@ to the [Haskell Package Versioning Policy][pvp].
 
 ## [Unreleased]
 
+### Added
+
+- Added more efficient `spawn_` and `run_` functions for spawning actors that
+don't receive messages
+- Re-exported common functions and types, such as `MonadIO` and `forever`, via
+`Drama.Reexports` module
+
+### Changed
+
+- Added `Message` constraint to functions dealing with an actor's `Address` and
+`Mailbox` (`send`, `receive`, `spawn`, etc.)
+
 ## [0.1.0.3] - 2021-02-20
 
 ### Added
