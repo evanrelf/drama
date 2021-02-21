@@ -7,9 +7,27 @@ to the [Haskell Package Versioning Policy][pvp].
 
 ## [Unreleased]
 
+## [1.0.0.0] - 2021-02-21
+
+### Added
+
+- Added `Server` abstraction (enforces replies with `call`)
+- Added `examples/server.hs` to show use of `Server`
+- Moved things to separate modules (everything still re-exported from top-level
+`Drama` module)
+- Exposed `NotVoid`
+
 ### Changed
 
 - Renamed "actor" to "process"
+- Renamed `Message` to `NotVoid`
+- Generalized `loop`, `continue`, and `exit` to any monad
+- Updated `workers` example to use `call` function
+- Improved error message for unreachable `msg ~ Void` state
+
+## Fixed
+
+- Fixed incorrect use of `-XCPP` with `deriving newtype MonadFail`
 
 ## [0.2.0.0] - 2021-02-20
 
@@ -64,7 +82,8 @@ don't receive messages
 
 Initial release
 
-[Unreleased]: https://github.com/evanrelf/drama/compare/v0.2.0.0...HEAD
+[Unreleased]: https://github.com/evanrelf/drama/compare/v1.0.0.0...HEAD
+[1.0.0.0]: https://github.com/evanrelf/drama/releases/tag/v1.0.0.0
 [0.2.0.0]: https://github.com/evanrelf/drama/releases/tag/v0.2.0.0
 [0.1.0.3]: https://github.com/evanrelf/drama/releases/tag/v0.1.0.3
 [0.1.0.2]: https://github.com/evanrelf/drama/releases/tag/v0.1.0.2
