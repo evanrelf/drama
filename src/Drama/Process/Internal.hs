@@ -9,7 +9,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
--- For `Message msg`
+-- For `NotVoid msg`
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 {-# OPTIONS_HADDOCK not-home #-}
@@ -51,10 +51,10 @@ import Prelude hiding (MonadFail)
 -- prevents runtime exceptions.
 --
 -- @since 1.0.0.0
-type family Message msg :: Constraint where
-  Message Void = TypeError ('Text "Processes with 'msg ~ Void' cannot receive messages")
-  Message () = TypeError ('Text "Use 'msg ~ Void' instead of 'msg ~ ()' for processes which do not receive messages")
-  Message msg = ()
+type family NotVoid msg :: Constraint where
+  NotVoid Void = TypeError ('Text "Processes with 'msg ~ Void' cannot receive messages")
+  NotVoid () = TypeError ('Text "Use 'msg ~ Void' instead of 'msg ~ ()' for processes which do not receive messages")
+  NotVoid msg = ()
 
 
 -- | The `Process` monad, where you can `spawn` other processes, and `send` and
@@ -118,7 +118,7 @@ newtype Scope = Scope Ki.Scope
 --
 -- @since 1.0.0.0
 spawn
-  :: Message childMsg
+  :: NotVoid childMsg
   => Process childMsg ()
   -> Process msg (Address childMsg)
 spawn process = do
@@ -170,7 +170,7 @@ wait = do
 -- other processes, or for sending yourself a message.
 --
 -- @since 1.0.0.0
-here :: Message msg => Process msg (Address msg)
+here :: NotVoid msg => Process msg (Address msg)
 here = Process $ asks address
 
 
@@ -182,7 +182,7 @@ here = Process $ asks address
 --
 -- @since 1.0.0.0
 send
-  :: Message recipientMsg
+  :: NotVoid recipientMsg
   => Address recipientMsg
   -> recipientMsg
   -> Process msg ()
@@ -200,7 +200,7 @@ send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 -- >   liftIO $ putStrLn string
 --
 -- @since 1.0.0.0
-receive :: Message msg => Process msg msg
+receive :: NotVoid msg => Process msg msg
 receive = do
   Mailbox outChan <- Process $ asks mailbox
   liftIO $ Unagi.readChan outChan
@@ -218,7 +218,7 @@ receive = do
 -- >     Nothing -> ...
 --
 -- @since 1.0.0.0
-tryReceive :: Message msg => Process msg (Maybe msg)
+tryReceive :: NotVoid msg => Process msg (Maybe msg)
 tryReceive = do
   Mailbox outChan <- Process $ asks mailbox
   (element, _) <- liftIO $ Unagi.tryReadChan outChan
@@ -229,7 +229,7 @@ tryReceive = do
 -- program.
 --
 -- @since 1.0.0.0
-run :: (Message msg, MonadIO m) => Process msg a -> m a
+run :: (NotVoid msg, MonadIO m) => Process msg a -> m a
 run process = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let address = Address inChan
