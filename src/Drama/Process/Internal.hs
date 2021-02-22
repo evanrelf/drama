@@ -73,7 +73,7 @@ processToIO processEnv (Process reader) = liftIO $ runReaderT reader processEnv
 data ProcessEnv msg = ProcessEnv
   { address :: Address msg
   , mailbox :: Mailbox msg
-  , scope :: Scope
+  , scope :: !Scope
   }
 
 
