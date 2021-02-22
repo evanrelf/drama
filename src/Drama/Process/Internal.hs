@@ -127,13 +127,7 @@ spawn process = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let address = Address inChan
   let mailbox = Mailbox outChan
-
-  Scope kiScope <- Process $ asks scope
-  liftIO $ Ki.fork_ kiScope $ Ki.scoped \childKiScope ->
-    let childScope = Scope childKiScope
-        childEnv = ProcessEnv{address, mailbox, scope = childScope}
-     in runProcess childEnv process
-
+  spawnImpl address mailbox process
   pure address
 
 
@@ -145,12 +139,17 @@ spawn_ :: Process NoMsg () -> Process msg ()
 spawn_ process = do
   let address = Address (error voidMsgError)
   let mailbox = Mailbox (error voidMsgError)
+  spawnImpl address mailbox process
 
+
+spawnImpl
+  :: Address childMsg
+  -> Mailbox childMsg
+  -> Process childMsg ()
+  -> Process msg ()
+spawnImpl address mailbox process = do
   Scope kiScope <- Process $ asks scope
-  liftIO $ Ki.fork_ kiScope $ Ki.scoped \childKiScope ->
-    let childScope = Scope childKiScope
-        childEnv = ProcessEnv{address, mailbox, scope = childScope}
-     in runProcess childEnv process
+  liftIO $ Ki.fork_ kiScope $ runImpl address mailbox process
 
 
 -- | Wait for all processes spawned by the current process to terminate.
@@ -236,10 +235,7 @@ run process = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let address = Address inChan
   let mailbox = Mailbox outChan
-
-  liftIO $ Ki.scoped \kiScope -> do
-    let scope = Scope kiScope
-    runProcess ProcessEnv{address, mailbox, scope} process
+  runImpl address mailbox process
 
 
 -- | More efficient version of `run`, for processes which receive no messages
@@ -250,7 +246,11 @@ run_ :: MonadIO m => Process NoMsg a -> m a
 run_ process = do
   let address = Address (error voidMsgError)
   let mailbox = Mailbox (error voidMsgError)
+  runImpl address mailbox process
 
+
+runImpl :: MonadIO m => Address msg -> Mailbox msg -> Process msg a -> m a
+runImpl address mailbox process = do
   liftIO $ Ki.scoped \kiScope -> do
     let scope = Scope kiScope
     runProcess ProcessEnv{address, mailbox, scope} process
