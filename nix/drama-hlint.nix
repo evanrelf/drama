@@ -16,8 +16,6 @@ in
     doCheck = true;
 
     checkPhase = ''
-      hlint . --report
-      mkdir "$out"
-      mv report.html "$out/hlint.html"
+      hlint .
     '';
   }
