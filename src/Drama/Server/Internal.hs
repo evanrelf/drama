@@ -40,8 +40,7 @@ data Envelope msg
 --
 -- @since 1.0.0.0
 cast :: Address (Envelope recipientMsg) -> recipientMsg () -> Process msg ()
-cast addr msg = do
-  send addr (Cast msg)
+cast addr msg = send addr (Cast msg)
 
 
 -- | TODO
