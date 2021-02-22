@@ -16,8 +16,6 @@ in
     doCheck = true;
 
     checkPhase = ''
-      stan --hiedir "${drama.hie}" report
-      mkdir "$out"
-      mv stan.html "$out"
+      stan --hiedir "${drama.hie}"
     '';
   }
