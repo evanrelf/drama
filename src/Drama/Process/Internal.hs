@@ -63,8 +63,8 @@ newtype Process msg a = Process (ReaderT (ProcessEnv msg) IO a)
 
 
 -- | @since 1.0.0.0
-processToIO :: MonadIO m => ProcessEnv msg -> Process msg a -> m a
-processToIO processEnv (Process reader) = liftIO $ runReaderT reader processEnv
+runProcess :: MonadIO m => ProcessEnv msg -> Process msg a -> m a
+runProcess processEnv (Process reader) = liftIO $ runReaderT reader processEnv
 
 
 -- | Environment for the `Process` monad.
@@ -132,7 +132,7 @@ spawn process = do
   liftIO $ Ki.fork_ kiScope $ Ki.scoped \childKiScope ->
     let childScope = Scope childKiScope
         childEnv = ProcessEnv{address, mailbox, scope = childScope}
-     in processToIO childEnv process
+     in runProcess childEnv process
 
   pure address
 
@@ -150,7 +150,7 @@ spawn_ process = do
   liftIO $ Ki.fork_ kiScope $ Ki.scoped \childKiScope ->
     let childScope = Scope childKiScope
         childEnv = ProcessEnv{address, mailbox, scope = childScope}
-     in processToIO childEnv process
+     in runProcess childEnv process
 
 
 -- | Wait for all processes spawned by the current process to terminate.
@@ -239,7 +239,7 @@ run process = do
 
   liftIO $ Ki.scoped \kiScope -> do
     let scope = Scope kiScope
-    processToIO ProcessEnv{address, mailbox, scope} process
+    runProcess ProcessEnv{address, mailbox, scope} process
 
 
 -- | More efficient version of `run`, for processes which receive no messages
@@ -253,7 +253,7 @@ run_ process = do
 
   liftIO $ Ki.scoped \kiScope -> do
     let scope = Scope kiScope
-    processToIO ProcessEnv{address, mailbox, scope} process
+    runProcess ProcessEnv{address, mailbox, scope} process
 
 
 -- | Loop indefinitely with state. Use `Control.Monad.forever` for stateless
