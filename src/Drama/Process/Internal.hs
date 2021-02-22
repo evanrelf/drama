@@ -158,6 +158,7 @@ spawnImpl address mailbox process = do
 --
 -- > fooAddr <- spawn foo
 -- > barAddr <- spawn bar
+-- > ...
 -- > wait
 --
 -- @since 1.0.0.0
@@ -195,8 +196,8 @@ send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 --
 -- Example:
 --
--- > printer :: Process String ()
--- > printer = forever do
+-- > logger :: Process String ()
+-- > logger = forever do
 -- >   string <- receive
 -- >   liftIO $ putStrLn string
 --
@@ -212,8 +213,8 @@ receive = do
 --
 -- Example:
 --
--- > printer :: Process String ()
--- > printer = forever do
+-- > logger :: Process String ()
+-- > logger = forever do
 -- >   tryReceive >>= \case
 -- >     Just string -> liftIO $ putStrLn string
 -- >     Nothing -> ...
@@ -261,12 +262,12 @@ runImpl address mailbox process = do
 --
 -- Example:
 --
--- > counter :: Process () Int
+-- > counter :: Process NoMsg ()
 -- > counter = loop 10 \count -> do
 -- >   liftIO $ print count
 -- >   if count > 0
 -- >     then continue (count - 1)
--- >     else exit count
+-- >     else exit ()
 --
 -- @since 1.0.0.0
 loop
