@@ -29,7 +29,7 @@ data FibMsg res where
 
 
 -- | Process which immediately spawns and delegates to "worker" processes.
-fib :: Server FibMsg ()
+fib :: Process (Envelope FibMsg) ()
 fib = forever do
   envelope <- receive
   spawn_ (fibWorker envelope)

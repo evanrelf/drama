@@ -62,8 +62,6 @@ library
     , Drama.Process
     , Drama.Process.Internal
     , Drama.Reexports
-    , Drama.Server
-    , Drama.Server.Internal
 
 
 benchmark bench

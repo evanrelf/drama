@@ -39,7 +39,7 @@ data CounterMsg res where
   GetCount :: CounterMsg Int
 
 
-counter :: Int -> Server CounterMsg ()
+counter :: Int -> Process (Envelope CounterMsg) ()
 counter count0 = do
   UseState{get, modify} <- useState count0
 
@@ -81,7 +81,7 @@ data StateMsg s res where
   ModifyState :: (s -> s) -> StateMsg s ()
 
 
-state :: s -> Server (StateMsg s) ()
+state :: s -> Process (Envelope (StateMsg s)) ()
 state s0 = do
   stateIORef <- liftIO $ newIORef s0
 
