@@ -32,8 +32,8 @@ type Server msg a = Process (Envelope msg) a
 --
 -- @since 1.0.0.0
 data Envelope msg
-  = Cast (msg ())
-  | forall res. HasMsg res => Call (Address res) (msg res)
+  = Cast !(msg ())
+  | forall res. HasMsg res => Call !(Address res) !(msg res)
 
 
 -- | TODO
