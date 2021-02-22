@@ -2,9 +2,11 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -99,17 +101,25 @@ newtype Scope = Scope Ki.Scope
 -- | TODO
 --
 -- @since 1.0.0.0
+type family HasMsg msg :: Constraint where
+  HasMsg NoMsg = TypeError ('Text "Processes with 'msg ~ NoMsg' cannot receive messages")
+  HasMsg Void = TypeError ('Text "Use 'msg ~ NoMsg' instead of 'msg ~ NoMsg' for processes which do not receive messages")
+  HasMsg () = TypeError ('Text "Use 'msg ~ NoMsg' instead of 'msg ~ ()' for processes which do not receive messages")
+  HasMsg msg = ()
+
+
+-- | TODO
+--
+-- @since 1.0.0.0
 data NoMsg
 
 
 -- | TODO
 --
 -- @since 1.0.0.0
-type family HasMsg msg :: Constraint where
-  HasMsg NoMsg = TypeError ('Text "Processes with 'msg ~ NoMsg' cannot receive messages")
-  HasMsg Void = TypeError ('Text "Use 'msg ~ NoMsg' instead of 'msg ~ NoMsg' for processes which do not receive messages")
-  HasMsg () = TypeError ('Text "Use 'msg ~ NoMsg' instead of 'msg ~ ()' for processes which do not receive messages")
-  HasMsg msg = ()
+data Envelope msg
+  = Cast !(msg ())
+  | forall res. HasMsg res => Call !(Address res) !(msg res)
 
 
 -- | Spawn a new process. Returns the spawned process' address.
@@ -225,6 +235,43 @@ tryReceive = do
   Mailbox outChan <- Process $ asks mailbox
   (element, _) <- liftIO $ Unagi.tryReadChan outChan
   liftIO $ Unagi.tryRead element
+
+
+-- | TODO
+--
+-- @since 1.0.0.0
+cast :: Address (Envelope recipientMsg) -> recipientMsg () -> Process msg ()
+cast addr msg = send addr (Cast msg)
+
+
+-- | TODO
+--
+-- @since 1.0.0.0
+call
+  :: HasMsg res
+  => Address (Envelope recipientMsg)
+  -> recipientMsg res
+  -> Process msg res
+call addr msg = do
+  (inChan, outChan) <- liftIO Unagi.newChan
+  let returnAddr = Address inChan
+  send addr (Call returnAddr msg)
+  liftIO $ Unagi.readChan outChan
+
+
+-- | TODO
+--
+-- @since 1.0.0.0
+handle
+  :: (forall res. someMsg res -> Process msg res)
+  -> Envelope someMsg
+  -> Process msg ()
+handle callback = \case
+  Cast msg ->
+    callback msg
+  Call returnAddr msg -> do
+    res <- callback msg
+    send returnAddr res
 
 
 -- | Run a top-level process. Intended to be used at the entry point of your

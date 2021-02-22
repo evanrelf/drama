@@ -9,15 +9,7 @@
 --
 
 module Drama.Server
-  ( Server
-  , Envelope
-
-    -- * Sending messages
-  , cast
-  , call
-
-    -- * Handling messages
-  , handle
+  (
   )
 where
 

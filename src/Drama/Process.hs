@@ -18,19 +18,24 @@ module Drama.Process
 
     -- * Messages
 
-  , HasMsg
-  , NoMsg
+    -- ** High-level API
+  , cast
+  , call
+  , handle
+
+    -- ** Low-level API
+  , send
+  , receive
+  , tryReceive
 
     -- ** Addresses
   , Address
   , here
 
-    -- ** Sending messages
-  , send
-
-    -- ** Receiving messages
-  , receive
-  , tryReceive
+    -- ** Message types
+  , HasMsg
+  , NoMsg
+  , Envelope
 
     -- * Managing state
   , loop
