@@ -124,7 +124,7 @@ data Envelope msg
 
 -- | Spawn a new process. Returns the spawned process' address.
 --
--- Example:
+-- ===== __ Example __
 --
 -- > printerAddress <- spawn printer
 --
@@ -164,7 +164,7 @@ spawnImpl address mailbox process = do
 
 -- | Wait for all processes spawned by the current process to terminate.
 --
--- Example:
+-- ===== __ Example __
 --
 -- > fooAddr <- spawn foo
 -- > barAddr <- spawn bar
@@ -188,7 +188,7 @@ here = Process $ asks address
 
 -- | Given a process' address, send it a message.
 --
--- Example:
+-- ===== __ Example __
 --
 -- > send printerAddress "Hello, world!"
 --
@@ -204,7 +204,7 @@ send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 -- | Receive a message sent to the process' mailbox. This function blocks until
 -- a message is received.
 --
--- Example:
+-- ===== __ Example __
 --
 -- > logger :: Process String ()
 -- > logger = forever do
@@ -221,7 +221,7 @@ receive = do
 -- | Receive a message sent to the process' mailbox. This function blocks until
 -- a message is received.
 --
--- Example:
+-- ===== __ Example __
 --
 -- > logger :: Process String ()
 -- > logger = forever do
@@ -307,7 +307,7 @@ runImpl address mailbox process = do
 -- | Loop indefinitely with state. Use `Control.Monad.forever` for stateless
 -- infinite loops.
 --
--- Example:
+-- ===== __ Example __
 --
 -- > counter :: Process NoMsg ()
 -- > counter = loop 10 \count -> do
