@@ -38,7 +38,7 @@ fib = forever do
 
 -- | "Worker" process responsible for doing the real, time-consuming work. Dies
 -- after sending its result to the return address.
-fibWorker :: Envelope FibMsg -> Process Void ()
+fibWorker :: Envelope FibMsg -> Process NoMsg ()
 fibWorker = \case
   Cast msg -> case msg of {}
   Call returnAddr (GetFibNumber n) ->

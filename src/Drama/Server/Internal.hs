@@ -18,7 +18,7 @@ module Drama.Server.Internal where
 
 import Control.Monad.IO.Class (MonadIO (..))
 import Drama.Process (Process, receive, send)
-import Drama.Process.Internal (Address (..), NotVoid)
+import Drama.Process.Internal (Address (..), HasMsg)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
 
@@ -33,7 +33,7 @@ type Server msg a = Process (Envelope msg) a
 -- @since 1.0.0.0
 data Envelope msg
   = Cast (msg ())
-  | forall res. NotVoid res => Call (Address res) (msg res)
+  | forall res. HasMsg res => Call (Address res) (msg res)
 
 
 -- | TODO
@@ -47,7 +47,7 @@ cast addr msg = send addr (Cast msg)
 --
 -- @since 1.0.0.0
 call
-  :: NotVoid res
+  :: HasMsg res
   => Address (Envelope recipientMsg)
   -> recipientMsg res
   -> Process msg res
