@@ -17,5 +17,6 @@ in
 
     checkPhase = ''
       hlint .
+      touch "$out"
     '';
   }
