@@ -101,8 +101,8 @@ state s0 = do
 
 
 data UseState s = UseState
-  { get :: forall msg. NotVoid s => Process msg s
-  , gets :: forall a msg. NotVoid a => (s -> a) -> Process msg a
+  { get :: forall msg. HasMsg s => Process msg s
+  , gets :: forall a msg. HasMsg a => (s -> a) -> Process msg a
   , put :: forall msg. s -> Process msg ()
   , modify :: forall msg. (s -> s) -> Process msg ()
   }

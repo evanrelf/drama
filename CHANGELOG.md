@@ -15,12 +15,12 @@ to the [Haskell Package Versioning Policy][pvp].
 - Added `examples/server.hs` to show use of `Server`
 - Moved things to separate modules (everything still re-exported from top-level
 `Drama` module)
-- Exposed `NotVoid`
+- Added `NoMsg`, to be used instead of `Void`
 
 ### Changed
 
 - Renamed "actor" to "process"
-- Renamed `Message` to `NotVoid`
+- Renamed `Message` to `HasMsg`
 - Generalized `loop`, `continue`, and `exit` to any monad
 - Updated `workers` example to use `call` function
 - Improved error message for unreachable `msg ~ Void` state

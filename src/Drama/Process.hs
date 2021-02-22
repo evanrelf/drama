@@ -18,7 +18,8 @@ module Drama.Process
 
     -- * Messages
 
-  , NotVoid
+  , HasMsg
+  , NoMsg
 
     -- ** Addresses
   , Address

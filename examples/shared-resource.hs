@@ -34,7 +34,7 @@ logger = forever do
 
 
 -- | Silly example process which wants to print to the console
-fizzBuzz :: Address String -> Process Void ()
+fizzBuzz :: Address String -> Process NoMsg ()
 fizzBuzz loggerAddr = do
   let log = send loggerAddr
 
@@ -51,7 +51,7 @@ fizzBuzz loggerAddr = do
 
 
 -- | Silly example process which wants to print to the console
-navi :: Address String -> Process Void ()
+navi :: Address String -> Process NoMsg ()
 navi loggerAddr = do
   let log = send loggerAddr
 

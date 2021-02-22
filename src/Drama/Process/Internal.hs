@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
--- For `NotVoid msg`
+-- For `HasMsg msg`
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 {-# OPTIONS_HADDOCK not-home #-}
@@ -41,15 +41,6 @@ import Control.Monad.Fail (MonadFail)
 #if MIN_VERSION_base(4,13,0)
 import Prelude hiding (MonadFail)
 #endif
-
-
--- | TODO
---
--- @since 1.0.0.0
-type family NotVoid msg :: Constraint where
-  NotVoid Void = TypeError ('Text "Processes with 'msg ~ Void' cannot receive messages")
-  NotVoid () = TypeError ('Text "Use 'msg ~ Void' instead of 'msg ~ ()' for processes which do not receive messages")
-  NotVoid msg = ()
 
 
 -- | The `Process` monad, where you can `spawn` other processes, and `send` and
@@ -105,6 +96,22 @@ newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
 newtype Scope = Scope Ki.Scope
 
 
+-- | TODO
+--
+-- @since 1.0.0.0
+data NoMsg
+
+
+-- | TODO
+--
+-- @since 1.0.0.0
+type family HasMsg msg :: Constraint where
+  HasMsg NoMsg = TypeError ('Text "Processes with 'msg ~ NoMsg' cannot receive messages")
+  HasMsg Void = TypeError ('Text "Use 'msg ~ NoMsg' instead of 'msg ~ NoMsg' for processes which do not receive messages")
+  HasMsg () = TypeError ('Text "Use 'msg ~ NoMsg' instead of 'msg ~ ()' for processes which do not receive messages")
+  HasMsg msg = ()
+
+
 -- | Spawn a new process. Returns the spawned process' address.
 --
 -- Example:
@@ -113,7 +120,7 @@ newtype Scope = Scope Ki.Scope
 --
 -- @since 1.0.0.0
 spawn
-  :: NotVoid childMsg
+  :: HasMsg childMsg
   => Process childMsg ()
   -> Process msg (Address childMsg)
 spawn process = do
@@ -131,10 +138,10 @@ spawn process = do
 
 
 -- | More efficient version of `spawn`, for processes which receive no messages
--- (@msg ~ `Void`@). See docs for `spawn` for more information.
+-- (@msg ~ `NoMsg`@). See docs for `spawn` for more information.
 --
 -- @since 1.0.0.0
-spawn_ :: Process Void () -> Process msg ()
+spawn_ :: Process NoMsg () -> Process msg ()
 spawn_ process = do
   let address = Address (error voidMsgError)
   let mailbox = Mailbox (error voidMsgError)
@@ -165,7 +172,7 @@ wait = do
 -- other processes, or for sending yourself a message.
 --
 -- @since 1.0.0.0
-here :: NotVoid msg => Process msg (Address msg)
+here :: HasMsg msg => Process msg (Address msg)
 here = Process $ asks address
 
 
@@ -177,7 +184,7 @@ here = Process $ asks address
 --
 -- @since 1.0.0.0
 send
-  :: NotVoid recipientMsg
+  :: HasMsg recipientMsg
   => Address recipientMsg
   -> recipientMsg
   -> Process msg ()
@@ -195,7 +202,7 @@ send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 -- >   liftIO $ putStrLn string
 --
 -- @since 1.0.0.0
-receive :: NotVoid msg => Process msg msg
+receive :: HasMsg msg => Process msg msg
 receive = do
   Mailbox outChan <- Process $ asks mailbox
   liftIO $ Unagi.readChan outChan
@@ -213,7 +220,7 @@ receive = do
 -- >     Nothing -> ...
 --
 -- @since 1.0.0.0
-tryReceive :: NotVoid msg => Process msg (Maybe msg)
+tryReceive :: HasMsg msg => Process msg (Maybe msg)
 tryReceive = do
   Mailbox outChan <- Process $ asks mailbox
   (element, _) <- liftIO $ Unagi.tryReadChan outChan
@@ -224,7 +231,7 @@ tryReceive = do
 -- program.
 --
 -- @since 1.0.0.0
-run :: (NotVoid msg, MonadIO m) => Process msg a -> m a
+run :: (HasMsg msg, MonadIO m) => Process msg a -> m a
 run process = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let address = Address inChan
@@ -236,10 +243,10 @@ run process = do
 
 
 -- | More efficient version of `run`, for processes which receive no messages
--- (@msg ~ `Void`@). See docs for `run` for more information.
+-- (@msg ~ `NoMsg`@). See docs for `run` for more information.
 --
 -- @since 1.0.0.0
-run_ :: MonadIO m => Process Void a -> m a
+run_ :: MonadIO m => Process NoMsg a -> m a
 run_ process = do
   let address = Address (error voidMsgError)
   let mailbox = Mailbox (error voidMsgError)
@@ -299,7 +306,7 @@ voidMsgError = unlines . fmap unwords $
   [ ["[!] drama internal error"]
   , []
   , [ "Attempted to use the address or mailbox of a process which cannot send"
-    , "or receive messages (msg ~ Void)."
+    , "or receive messages (msg ~ NoMsg)."
     ]
   , [ "This should be impossible using non-internal modules!" ]
   , []
