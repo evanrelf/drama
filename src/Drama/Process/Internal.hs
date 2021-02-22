@@ -21,6 +21,9 @@
 -- License:    BSD-3-Clause
 -- Copyright:  © 2021 Evan Relf
 -- Maintainer: evan@evanrelf.com
+--
+-- TODO
+--
 
 module Drama.Process.Internal where
 
@@ -45,8 +48,7 @@ import Prelude hiding (MonadFail)
 #endif
 
 
--- | The `Process` monad, where you can `spawn` other processes, and `send` and
--- `receive` messages.
+-- | TODO
 --
 -- @since 1.0.0.0
 newtype Process msg a = Process (ReaderT (ProcessEnv msg) IO a)
@@ -64,12 +66,14 @@ newtype Process msg a = Process (ReaderT (ProcessEnv msg) IO a)
     )
 
 
--- | @since 1.0.0.0
+-- | TODO
+--
+-- @since 1.0.0.0
 runProcess :: MonadIO m => ProcessEnv msg -> Process msg a -> m a
 runProcess processEnv (Process reader) = liftIO $ runReaderT reader processEnv
 
 
--- | Environment for the `Process` monad.
+-- | TODO
 --
 -- @since 1.0.0.0
 data ProcessEnv msg = ProcessEnv
@@ -79,22 +83,21 @@ data ProcessEnv msg = ProcessEnv
   }
 
 
--- | The address for a process. Returned after `spawn`ing a process or asking
--- for the current process' address with `here`. Used to `send` messages to
--- specific processes.
+-- | TODO
 --
 -- @since 1.0.0.0
 newtype Address msg = Address (Unagi.InChan msg)
 
 
--- | Where messages are delivered. Implicitly provided to `receive` and
--- `tryReceive` by the `Process` monad.
+-- | TODO
 --
 -- @since 1.0.0.0
 newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
 
 
--- | @since 1.0.0.0
+-- | TODO
+--
+-- @since 1.0.0.0
 newtype Scope = Scope Ki.Scope
 
 
@@ -122,11 +125,7 @@ data Envelope msg
   | forall res. HasMsg res => Call !(Address res) !(msg res)
 
 
--- | Spawn a new process. Returns the spawned process' address.
---
--- ===== __ Example __
---
--- > printerAddress <- spawn printer
+-- | TODO
 --
 -- @since 1.0.0.0
 spawn
@@ -162,14 +161,7 @@ spawnImpl address mailbox process = do
   liftIO $ Ki.fork_ kiScope $ runImpl address mailbox process
 
 
--- | Wait for all processes spawned by the current process to terminate.
---
--- ===== __ Example __
---
--- > fooAddr <- spawn foo
--- > barAddr <- spawn bar
--- > ...
--- > wait
+-- | TODO
 --
 -- @since 1.0.0.0
 wait :: Process msg ()
@@ -178,19 +170,14 @@ wait = do
   liftIO $ Ki.wait kiScope
 
 
--- | Return the current process' own address. Useful for sending your address to
--- other processes, or for sending yourself a message.
+-- | TODO
 --
 -- @since 1.0.0.0
 here :: HasMsg msg => Process msg (Address msg)
 here = Process $ asks address
 
 
--- | Given a process' address, send it a message.
---
--- ===== __ Example __
---
--- > send printerAddress "Hello, world!"
+-- | TODO
 --
 -- @since 1.0.0.0
 send
@@ -201,8 +188,7 @@ send
 send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 
 
--- | Receive a message sent to the process' mailbox. This function blocks until
--- a message is received.
+-- | TODO
 --
 -- ===== __ Example __
 --
@@ -218,16 +204,7 @@ receive = do
   liftIO $ Unagi.readChan outChan
 
 
--- | Receive a message sent to the process' mailbox. This function blocks until
--- a message is received.
---
--- ===== __ Example __
---
--- > logger :: Process String ()
--- > logger = forever do
--- >   tryReceive >>= \case
--- >     Just string -> liftIO $ putStrLn string
--- >     Nothing -> ...
+-- | TODO
 --
 -- @since 1.0.0.0
 tryReceive :: HasMsg msg => Process msg (Maybe msg)
@@ -274,8 +251,7 @@ handle callback = \case
     send returnAddr res
 
 
--- | Run a top-level process. Intended to be used at the entry point of your
--- program.
+-- | TODO
 --
 -- @since 1.0.0.0
 run :: (HasMsg msg, MonadIO m) => Process msg a -> m a
@@ -310,7 +286,7 @@ runImpl address mailbox process = do
 -- ===== __ Example __
 --
 -- > counter :: Process NoMsg ()
--- > counter = loop 10 \count -> do
+-- > counter = loop (10 :: Int) \count -> do
 -- >   liftIO $ print count
 -- >   if count > 0
 -- >     then continue (count - 1)

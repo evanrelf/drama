@@ -5,7 +5,7 @@
 -- Copyright:  © 2021 Evan Relf
 -- Maintainer: evan@evanrelf.com
 --
--- Actor library for Haskell
+-- TODO
 --
 
 module Drama
