@@ -43,7 +43,7 @@ counter :: Int -> Server CounterMsg ()
 counter count0 = do
   UseState{get, modify} <- useState count0
 
-  forever $ handle \case
+  forever $ receive >>= handle \case
     Increment n -> modify (+ n)
     Decrement n -> modify (+ negate n)
     GetCount -> get
@@ -85,19 +85,19 @@ state :: s -> Server (StateMsg s) ()
 state s0 = do
   stateIORef <- liftIO $ newIORef s0
 
-  forever $ handle $ liftIO . \case
+  forever $ receive >>= handle \case
     GetState ->
-      readIORef stateIORef
+      liftIO $ readIORef stateIORef
 
     GetsState f -> do
-      s <- readIORef stateIORef
+      s <- liftIO $ readIORef stateIORef
       pure (f s)
 
     PutState s ->
-      writeIORef stateIORef s
+      liftIO $ writeIORef stateIORef s
 
     ModifyState f ->
-      modifyIORef stateIORef f
+      liftIO $ modifyIORef stateIORef f
 
 
 data UseState s = UseState
