@@ -3,6 +3,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 
 {-# OPTIONS_HADDOCK not-home #-}
@@ -17,8 +18,8 @@
 module Drama.Server.Internal where
 
 import Control.Monad.IO.Class (MonadIO (..))
-import Drama.Process (Process, receive, send)
-import Drama.Process.Internal (Address (..), HasMsg)
+import Drama.Process (HasMsg, Process, send)
+import Drama.Process.Internal (Address (..))
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
 
@@ -61,12 +62,13 @@ call addr msg = do
 -- | TODO
 --
 -- @since 1.0.0.0
-handle :: (forall res. msg res -> Server msg res) -> Server msg ()
-handle callback = do
-  envelope <- receive
-  case envelope of
-    Cast msg ->
-      callback msg
-    Call returnAddr msg -> do
-      res <- callback msg
-      send returnAddr res
+handle
+  :: (forall res. someMsg res -> Process msg res)
+  -> Envelope someMsg
+  -> Process msg ()
+handle callback = \case
+  Cast msg ->
+    callback msg
+  Call returnAddr msg -> do
+    res <- callback msg
+    send returnAddr res

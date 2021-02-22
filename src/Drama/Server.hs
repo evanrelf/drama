@@ -10,7 +10,7 @@
 
 module Drama.Server
   ( Server
-  , Envelope (..)
+  , Envelope
 
     -- * Sending messages
   , cast

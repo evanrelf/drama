@@ -30,7 +30,7 @@ data FibMsg res where
 
 
 -- | Process which immediately spawns and delegates to "worker" processes.
-fib :: Process (Envelope FibMsg) ()
+fib :: Server FibMsg ()
 fib = forever do
   envelope <- receive
   spawn_ (fibWorker envelope)
@@ -39,10 +39,8 @@ fib = forever do
 -- | "Worker" process responsible for doing the real, time-consuming work. Dies
 -- after sending its result to the return address.
 fibWorker :: Envelope FibMsg -> Process NoMsg ()
-fibWorker = \case
-  Cast msg -> case msg of {}
-  Call returnAddr (GetFibNumber n) ->
-    send returnAddr (n, fibs !! n)
+fibWorker = handle \case
+  GetFibNumber n -> pure (n, fibs !! n)
 
 
 -- | Infinite list of fibonacci numbers.
