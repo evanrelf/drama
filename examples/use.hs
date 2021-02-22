@@ -20,7 +20,7 @@ main = run_ do
     n <- getCount bottles
 
     when (n <= 0) do
-      liftIO $ exitSuccess
+      liftIO exitSuccess
 
     liftIO $ putStrLn (show n <> " bottle(s) of beer on the wall, " <> show n <> " bottle(s) of beer")
 
@@ -118,3 +118,6 @@ useState s0 = do
     , put = \s -> cast stateAddr (PutState s)
     , modify = \f -> cast stateAddr (ModifyState f)
     }
+
+
+{- HLINT ignore "Avoid lambda" -}
