@@ -307,7 +307,7 @@ loop s0 k =
     Right x -> pure x
 
 
--- | Continue looping with state.
+-- | Continue looping with some new state.
 --
 -- prop> continue s = pure (Left s)
 --
@@ -316,13 +316,13 @@ continue :: Monad m => s -> m (Either s a)
 continue s = pure (Left s)
 
 
--- | Exit loop with value.
+-- | Stop looping and return with a value.
 --
 -- prop> exit x = pure (Right x)
 --
 -- @since 1.0.0.0
-exit :: Monad m => a -> m (Either s a)
-exit x = pure (Right x)
+stop :: Monad m => a -> m (Either s a)
+stop x = pure (Right x)
 
 
 voidMsgError :: String
