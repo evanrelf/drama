@@ -11,8 +11,9 @@ to the [Haskell Package Versioning Policy][pvp].
 
 ### Added
 
-- Added `Server` abstraction (enforces replies with `call`)
-- Added `examples/server.hs` to show use of `Server`
+- Added `cast`, `call`, and `handle` functions, and `Envelope` message wrapper
+type, which enforce you get the response you expect from certain messages
+- Added `examples/use.hs` to experiment with "use pattern"
 - Moved things to separate modules (everything still re-exported from top-level
 `Drama` module)
 - Added `NoMsg`, to be used instead of `Void`
@@ -21,8 +22,9 @@ to the [Haskell Package Versioning Policy][pvp].
 
 - Renamed "actor" to "process"
 - Renamed `Message` to `HasMsg`
-- Generalized `loop`, `continue`, and `exit` to any monad
-- Updated `workers` example to use `call` function
+- Renamed `exit` to `stop`
+- Generalized `loop`, `continue`, and `stop` to any monad
+- Updated examples to use `cast` and `call` where possible
 - Improved error message for unreachable `msg ~ Void` state
 
 ## Fixed
