@@ -50,7 +50,7 @@ import Prelude hiding (MonadFail)
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 newtype Process msg a = Process (ReaderT (ProcessEnv msg) IO a)
   deriving newtype
     ( Functor
@@ -68,14 +68,14 @@ newtype Process msg a = Process (ReaderT (ProcessEnv msg) IO a)
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 runProcess :: MonadIO m => ProcessEnv msg -> Process msg a -> m a
 runProcess processEnv (Process reader) = liftIO $ runReaderT reader processEnv
 
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 data ProcessEnv msg = ProcessEnv
   { address :: Address msg
   , mailbox :: Mailbox msg
@@ -85,25 +85,25 @@ data ProcessEnv msg = ProcessEnv
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 newtype Address msg = Address (Unagi.InChan msg)
 
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
 
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 newtype Scope = Scope Ki.Scope
 
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 type family HasMsg msg :: Constraint where
   HasMsg NoMsg = TypeError ('Text "Processes with 'msg ~ NoMsg' cannot receive messages")
   HasMsg Void = TypeError ('Text "Use 'msg ~ NoMsg' instead of 'msg ~ NoMsg' for processes which do not receive messages")
@@ -113,13 +113,13 @@ type family HasMsg msg :: Constraint where
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 data NoMsg
 
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 data Envelope msg
   = Cast !(msg ())
   | forall res. HasMsg res => Call !(Address res) !(msg res)
@@ -127,7 +127,7 @@ data Envelope msg
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 spawn
   :: HasMsg childMsg
   => Process childMsg ()
@@ -143,7 +143,7 @@ spawn process = do
 -- | More efficient version of `spawn`, for processes which receive no messages
 -- (@msg ~ `NoMsg`@). See docs for `spawn` for more information.
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 spawn_ :: Process NoMsg () -> Process msg ()
 spawn_ process = do
   let address = Address (error voidMsgError)
@@ -163,7 +163,7 @@ spawnImpl address mailbox process = do
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 wait :: Process msg ()
 wait = do
   Scope kiScope <- Process $ asks scope
@@ -172,14 +172,14 @@ wait = do
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 here :: HasMsg msg => Process msg (Address msg)
 here = Process $ asks address
 
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 send
   :: HasMsg recipientMsg
   => Address recipientMsg
@@ -197,7 +197,7 @@ send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 -- >   string <- receive
 -- >   liftIO $ putStrLn string
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 receive :: HasMsg msg => Process msg msg
 receive = do
   Mailbox outChan <- Process $ asks mailbox
@@ -206,7 +206,7 @@ receive = do
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 tryReceive :: HasMsg msg => Process msg (Maybe msg)
 tryReceive = do
   Mailbox outChan <- Process $ asks mailbox
@@ -216,14 +216,14 @@ tryReceive = do
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 cast :: Address (Envelope recipientMsg) -> recipientMsg () -> Process msg ()
 cast addr msg = send addr (Cast msg)
 
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 call
   :: HasMsg res
   => Address (Envelope recipientMsg)
@@ -238,7 +238,7 @@ call addr msg = do
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 handle
   :: (forall res. someMsg res -> Process msg res)
   -> Envelope someMsg
@@ -253,7 +253,7 @@ handle callback = \case
 
 -- | TODO
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 run :: (HasMsg msg, MonadIO m) => Process msg a -> m a
 run process = do
   (inChan, outChan) <- liftIO Unagi.newChan
@@ -265,7 +265,7 @@ run process = do
 -- | More efficient version of `run`, for processes which receive no messages
 -- (@msg ~ `NoMsg`@). See docs for `run` for more information.
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 run_ :: MonadIO m => Process NoMsg a -> m a
 run_ process = do
   let address = Address (error voidMsgError)
@@ -292,7 +292,7 @@ runImpl address mailbox process = do
 -- >     then continue (count - 1)
 -- >     else exit ()
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 loop
   :: Monad m
   => s
@@ -311,7 +311,7 @@ loop s0 k =
 --
 -- prop> continue s = pure (Left s)
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 continue :: Monad m => s -> m (Either s a)
 continue s = pure (Left s)
 
@@ -320,7 +320,7 @@ continue s = pure (Left s)
 --
 -- prop> exit x = pure (Right x)
 --
--- @since 1.0.0.0
+-- @since 0.3.0.0
 stop :: Monad m => a -> m (Either s a)
 stop x = pure (Right x)
 

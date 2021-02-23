@@ -7,7 +7,7 @@ to the [Haskell Package Versioning Policy][pvp].
 
 ## [Unreleased]
 
-## [1.0.0.0] - 2021-02-21
+## [0.3.0.0] - 2021-02-23
 
 ### Added
 
@@ -82,8 +82,8 @@ don't receive messages
 
 Initial release
 
-[Unreleased]: https://github.com/evanrelf/drama/compare/v1.0.0.0...HEAD
-[1.0.0.0]: https://github.com/evanrelf/drama/releases/tag/v1.0.0.0
+[Unreleased]: https://github.com/evanrelf/drama/compare/v0.3.0.0...HEAD
+[0.3.0.0]: https://github.com/evanrelf/drama/releases/tag/v0.3.0.0
 [0.2.0.0]: https://github.com/evanrelf/drama/releases/tag/v0.2.0.0
 [0.1.0.3]: https://github.com/evanrelf/drama/releases/tag/v0.1.0.3
 [0.1.0.2]: https://github.com/evanrelf/drama/releases/tag/v0.1.0.2

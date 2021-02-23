@@ -1,7 +1,7 @@
 cabal-version: 3.0
 
 name:        drama
-version:     1.0.0.0
+version:     0.3.0.0
 synopsis:    Actor library for Haskell
 description: Actor library for Haskell
 category:    Concurrency
