@@ -118,11 +118,23 @@ type family HasMsg msg :: Constraint where
 data NoMsg
 
 
--- | Wrapper for some `msg :: @Type@ -> @Type@` where the response type is
--- encoded in a type parameter (usually written as a GADT).
+-- | Wrapper for some message where the response type is encoded in a type
+-- parameter (usually written as a GADT).
 --
 -- Used in conjunction with the `cast` and `call` functions, which can guarantee
 -- a response to a message.
+--
+-- ===== __Example__
+--
+-- > data StateMsg s res where
+-- >   GetState :: StateMsg s s
+-- >   GetsState :: (s -> a) -> StateMsg s a
+-- >   PutState :: s -> StateMsg s ()
+-- >   ModifyState :: (s -> s) -> StateMsg s ()
+-- >
+-- > state :: s -> Process (Envelope (StateMsg s)) ()
+-- > state s0 = do
+-- >   ...
 --
 -- @since 0.3.0.0
 data Envelope msg
@@ -239,8 +251,7 @@ cast
 cast addr msg = send addr (Cast msg)
 
 
--- | Send a message to another process, and wait for a response. Blocks until a
--- response is received.
+-- | Send a message to another process, and wait for a response.
 --
 -- @since 0.3.0.0
 call
@@ -248,8 +259,9 @@ call
   => Address (Envelope msg)
   -- ^ Other process' address
   -> msg res
-  -- ^ Message to send (with a response type of `res`)
+  -- ^ Message to send
   -> Process _msg res
+  -- ^ Response
 call addr msg = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let returnAddr = Address inChan
