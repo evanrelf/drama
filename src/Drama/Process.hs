@@ -40,7 +40,7 @@ module Drama.Process
     -- * Managing state
   , loop
   , continue
-  , exit
+  , stop
 
     -- * Running your program
   , run
