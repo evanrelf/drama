@@ -14,6 +14,7 @@
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 {-# OPTIONS_HADDOCK not-home #-}
+{-# OPTIONS_HADDOCK prune #-}
 
 -- |
 -- Module:     Drama.Process.Internal
@@ -21,9 +22,6 @@
 -- License:    BSD-3-Clause
 -- Copyright:  © 2021 Evan Relf
 -- Maintainer: evan@evanrelf.com
---
--- TODO
---
 
 module Drama.Process.Internal where
 
@@ -78,8 +76,11 @@ runProcess processEnv (Process reader) = liftIO $ runReaderT reader processEnv
 -- @since 0.3.0.0
 data ProcessEnv msg = ProcessEnv
   { address :: Address msg
+    -- ^ TODO
   , mailbox :: Mailbox msg
+    -- ^ TODO
   , scope :: !Scope
+    -- ^ TODO
   }
 
 
@@ -106,7 +107,7 @@ newtype Scope = Scope Ki.Scope
 -- @since 0.3.0.0
 type family HasMsg msg :: Constraint where
   HasMsg NoMsg = TypeError ('Text "Processes with 'msg ~ NoMsg' cannot receive messages")
-  HasMsg Void = TypeError ('Text "Use 'msg ~ NoMsg' instead of 'msg ~ NoMsg' for processes which do not receive messages")
+  HasMsg Void = TypeError ('Text "Use 'msg ~ NoMsg' instead of 'msg ~ Void' for processes which do not receive messages")
   HasMsg () = TypeError ('Text "Use 'msg ~ NoMsg' instead of 'msg ~ ()' for processes which do not receive messages")
   HasMsg msg = ()
 
@@ -117,21 +118,29 @@ type family HasMsg msg :: Constraint where
 data NoMsg
 
 
--- | TODO
+-- | Wrapper for some `msg :: @Type@ -> @Type@` where the response type is
+-- encoded in a type parameter (usually written as a GADT).
+--
+-- Used in conjunction with the `cast` and `call` functions, which can guarantee
+-- a response to a message.
 --
 -- @since 0.3.0.0
 data Envelope msg
   = Cast !(msg ())
+  -- ^ Case where message needs to response (produced by `cast`)
   | forall res. HasMsg res => Call !(Address res) !(msg res)
+  -- ^ Case where message requires a response (produced by `call`)
 
 
 -- | TODO
 --
 -- @since 0.3.0.0
 spawn
-  :: HasMsg childMsg
-  => Process childMsg ()
-  -> Process msg (Address childMsg)
+  :: HasMsg msg
+  => Process msg ()
+  -- ^ Process to spawn
+  -> Process _msg (Address msg)
+  -- ^ Spawned process' address
 spawn process = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let address = Address inChan
@@ -152,16 +161,16 @@ spawn_ process = do
 
 
 spawnImpl
-  :: Address childMsg
-  -> Mailbox childMsg
-  -> Process childMsg ()
+  :: Address msg
+  -> Mailbox msg
   -> Process msg ()
+  -> Process _msg ()
 spawnImpl address mailbox process = do
   Scope kiScope <- Process $ asks scope
   liftIO $ Ki.fork_ kiScope $ runImpl address mailbox process
 
 
--- | TODO
+-- | Block until all child processes have terminated.
 --
 -- @since 0.3.0.0
 wait :: Process msg ()
@@ -170,25 +179,28 @@ wait = do
   liftIO $ Ki.wait kiScope
 
 
--- | TODO
+-- | Return the current process' address.
 --
 -- @since 0.3.0.0
 here :: HasMsg msg => Process msg (Address msg)
 here = Process $ asks address
 
 
--- | TODO
+-- | Send a message to another process.
 --
 -- @since 0.3.0.0
 send
-  :: HasMsg recipientMsg
-  => Address recipientMsg
-  -> recipientMsg
-  -> Process msg ()
+  :: HasMsg msg
+  => Address msg
+  -- ^ Other process' address
+  -> msg
+  -- ^ Message to send
+  -> Process _msg ()
 send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 
 
--- | TODO
+-- | Receive a message. When the mailbox is empty, blocks until a message
+-- arrives.
 --
 -- ===== __ Example __
 --
@@ -204,7 +216,7 @@ receive = do
   liftIO $ Unagi.readChan outChan
 
 
--- | TODO
+-- | Try to receive a message. When the mailbox is empty, returns `Nothing`.
 --
 -- @since 0.3.0.0
 tryReceive :: HasMsg msg => Process msg (Maybe msg)
@@ -214,21 +226,30 @@ tryReceive = do
   liftIO $ Unagi.tryRead element
 
 
--- | TODO
+-- | Send a message to another process, expecting no response. Returns
+-- immediately without blocking.
 --
 -- @since 0.3.0.0
-cast :: Address (Envelope recipientMsg) -> recipientMsg () -> Process msg ()
+cast
+  :: Address (Envelope msg)
+  -- ^ Other process' address
+  -> msg ()
+  -- ^ Message to send (has no response)
+  -> Process _msg ()
 cast addr msg = send addr (Cast msg)
 
 
--- | TODO
+-- | Send a message to another process, and wait for a response. Blocks until a
+-- response is received.
 --
 -- @since 0.3.0.0
 call
   :: HasMsg res
-  => Address (Envelope recipientMsg)
-  -> recipientMsg res
-  -> Process msg res
+  => Address (Envelope msg)
+  -- ^ Other process' address
+  -> msg res
+  -- ^ Message to send (with a response type of `res`)
+  -> Process _msg res
 call addr msg = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let returnAddr = Address inChan
@@ -236,13 +257,15 @@ call addr msg = do
   liftIO $ Unagi.readChan outChan
 
 
--- | TODO
+-- | Handle messages which may require a response.
 --
 -- @since 0.3.0.0
 handle
-  :: (forall res. someMsg res -> Process msg res)
-  -> Envelope someMsg
-  -> Process msg ()
+  :: (forall res. msg res -> Process _msg res)
+  -- ^ Callback function that responds to messages
+  -> Envelope msg
+  -- ^ Message which may require a response
+  -> Process _msg ()
 handle callback = \case
   Cast msg ->
     callback msg
@@ -298,7 +321,7 @@ loop
   => s
   -- ^ Initial state
   -> (s -> m (Either s a))
-  -- ^ Action to perform, either returning a new state to continue looping, or
+  -- ^ Action to perform, returning either a new state to continue looping, or
   -- a final value to stop looping.
   -> m a
 loop s0 k =
@@ -316,7 +339,7 @@ continue :: Monad m => s -> m (Either s a)
 continue s = pure (Left s)
 
 
--- | Stop looping and return with a value.
+-- | Stop looping and return with a final value.
 --
 -- prop> exit x = pure (Right x)
 --
