@@ -61,23 +61,28 @@ newtype Process msg a = Process (ReaderT (ProcessEnv msg) IO a)
     )
 
 
--- | TODO
+-- | Provided some `ProcessEnv`, convert a `Process` action into an `IO`
+-- action.
 --
 -- @since 0.3.0.0
 runProcess :: MonadIO m => ProcessEnv msg -> Process msg a -> m a
 runProcess processEnv (Process reader) = liftIO $ runReaderT reader processEnv
 
 
--- | TODO
+-- | Ambient context provided by the `Process` monad.
+--
+-- Values in `ProcessEnv` are scoped to the current process and cannot be safely
+-- shared. Functions like `spawn`, `receive`, and `here` use these values as
+-- implicit parameters to avoid leaking internals (and for convenience).
 --
 -- @since 0.3.0.0
 data ProcessEnv msg = ProcessEnv
   { address :: Address msg
-    -- ^ TODO
+    -- ^ Current process' address.
   , mailbox :: Mailbox msg
-    -- ^ TODO
+    -- ^ Current process' mailbox.
   , scope :: !Scope
-    -- ^ TODO
+    -- ^ Current process' token used for spawning threads.
   }
 
 
@@ -93,13 +98,15 @@ newtype Address msg = Address (Unagi.InChan msg)
 newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
 
 
--- | TODO
+-- | Token delimiting the lifetime of child processes (threads) created by a
+-- process.
 --
 -- @since 0.3.0.0
 newtype Scope = Scope Ki.Scope
 
 
--- | TODO
+-- | Constraint which prevents setting `msg ~ Void`, and provides helpful type
+-- errors.
 --
 -- @since 0.3.0.0
 type family HasMsg msg :: Constraint where
@@ -109,13 +116,13 @@ type family HasMsg msg :: Constraint where
   HasMsg msg = ()
 
 
--- | TODO
+-- | Message type used by processes which do not receive messages.
 --
 -- @since 0.3.0.0
 data NoMsg
 
 
--- | TODO
+-- | Spawn a child process and return its address.
 --
 -- @since 0.3.0.0
 spawn
@@ -185,13 +192,6 @@ send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 -- | Receive a message. When the mailbox is empty, blocks until a message
 -- arrives.
 --
--- ===== __ Example __
---
--- > logger :: Process String ()
--- > logger = forever do
--- >   string <- receive
--- >   liftIO $ putStrLn string
---
 -- @since 0.3.0.0
 receive :: HasMsg msg => Process msg msg
 receive = do
@@ -209,7 +209,18 @@ tryReceive = do
   liftIO $ Unagi.tryRead element
 
 
--- | TODO
+-- | Run a top-level process. Intended to be used at the entry point of your
+-- program.
+--
+-- If your program is designed with processes in mind, you can use `Process` as
+-- your program's base monad:
+--
+-- > main :: IO ()
+-- > main = run do
+-- >   ...
+--
+-- Otherwise, use `run` like you would with @run@ functions from libraries like
+-- @transformers@ or @mtl@.
 --
 -- @since 0.3.0.0
 run :: (HasMsg msg, MonadIO m) => Process msg a -> m a
