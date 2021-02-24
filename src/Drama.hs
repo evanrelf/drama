@@ -6,10 +6,10 @@
 -- Maintainer: evan@evanrelf.com
 --
 -- Actor library for Haskell
---
 
 module Drama
   ( module Drama.Process
+  , module Drama.Server
   , module Drama.Loop
 
     -- * Re-exports
@@ -20,3 +20,4 @@ where
 import Drama.Loop
 import Drama.Process
 import Drama.Reexports
+import Drama.Server

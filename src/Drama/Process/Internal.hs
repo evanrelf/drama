@@ -2,11 +2,8 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -118,32 +115,6 @@ type family HasMsg msg :: Constraint where
 data NoMsg
 
 
--- | Wrapper for some message where the response type is encoded in a type
--- parameter (usually written as a GADT).
---
--- Used in conjunction with the `cast` and `call` functions, which can guarantee
--- a response to a message.
---
--- ===== __Example__
---
--- > data StateMsg s res where
--- >   GetState :: StateMsg s s
--- >   GetsState :: (s -> a) -> StateMsg s a
--- >   PutState :: s -> StateMsg s ()
--- >   ModifyState :: (s -> s) -> StateMsg s ()
--- >
--- > state :: s -> Process (Envelope (StateMsg s)) ()
--- > state s0 = do
--- >   ...
---
--- @since 0.3.0.0
-data Envelope msg
-  = Cast !(msg ())
-  -- ^ Case where message needs to response (produced by `cast`)
-  | forall res. HasMsg res => Call !(Address res) !(msg res)
-  -- ^ Case where message requires a response (produced by `call`)
-
-
 -- | TODO
 --
 -- @since 0.3.0.0
@@ -236,54 +207,6 @@ tryReceive = do
   Mailbox outChan <- Process $ asks mailbox
   (element, _) <- liftIO $ Unagi.tryReadChan outChan
   liftIO $ Unagi.tryRead element
-
-
--- | Send a message to another process, expecting no response. Returns
--- immediately without blocking.
---
--- @since 0.3.0.0
-cast
-  :: Address (Envelope msg)
-  -- ^ Other process' address
-  -> msg ()
-  -- ^ Message to send (has no response)
-  -> Process _msg ()
-cast addr msg = send addr (Cast msg)
-
-
--- | Send a message to another process, and wait for a response.
---
--- @since 0.3.0.0
-call
-  :: HasMsg res
-  => Address (Envelope msg)
-  -- ^ Other process' address
-  -> msg res
-  -- ^ Message to send
-  -> Process _msg res
-  -- ^ Response
-call addr msg = do
-  (inChan, outChan) <- liftIO Unagi.newChan
-  let returnAddr = Address inChan
-  send addr (Call returnAddr msg)
-  liftIO $ Unagi.readChan outChan
-
-
--- | Handle messages which may require a response.
---
--- @since 0.3.0.0
-handle
-  :: (forall res. msg res -> Process _msg res)
-  -- ^ Callback function that responds to messages
-  -> Envelope msg
-  -- ^ Message which may require a response
-  -> Process _msg ()
-handle callback = \case
-  Cast msg ->
-    callback msg
-  Call returnAddr msg -> do
-    res <- callback msg
-    send returnAddr res
 
 
 -- | TODO
