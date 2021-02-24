@@ -19,5 +19,9 @@ jobs:
         with:
           name: evanrelf
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-      - run: nix-build
+      - run: |
+          nix-build --attr drama --argstr ghcVersion "ghc865"
+          nix-build --attr drama --argstr ghcVersion "ghc884"
+          nix-build --attr drama --argstr ghcVersion "ghc8103"
+          nix-build
         name: nix-build

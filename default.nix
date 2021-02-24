@@ -1,4 +1,6 @@
-{ pkgs ? import ./nix/pkgs.nix }:
+{ pkgs ? import ./nix/pkgs.nix { inherit (args) ghcVersion; }
+, ghcVersion ? null
+}@args:
 
 {
   drama = pkgs.haskellPackages.drama;
