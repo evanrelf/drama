@@ -37,11 +37,6 @@ module Drama.Process
   , NoMsg
   , Envelope
 
-    -- * Managing state
-  , loop
-  , continue
-  , stop
-
     -- * Running your program
   , run
   , run_
