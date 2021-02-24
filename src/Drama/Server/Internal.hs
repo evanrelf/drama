@@ -20,6 +20,10 @@ import Drama.Process.Internal (Address (..))
 import qualified Control.Concurrent.Chan.Unagi as Unagi
 
 
+-- | @since 0.3.0.0
+type Server msg a = Process (Envelope msg) a
+
+
 -- | Wrapper around higher-kinded message types, to make them compatible with
 -- the lower-level `Process` machinery.
 --
@@ -38,7 +42,7 @@ import qualified Control.Concurrent.Chan.Unagi as Unagi
 -- >   PutState :: s -> StateMsg s ()
 -- >   ModifyState :: (s -> s) -> StateMsg s ()
 -- >
--- > state :: s -> Process (Envelope (StateMsg s)) ()
+-- > state :: s -> Server (StateMsg s) ()
 -- > state s0 = do
 -- >   stateIORef <- liftIO $ newIORef s0
 -- >

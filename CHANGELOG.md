@@ -13,6 +13,7 @@ to the [Haskell Package Versioning Policy][pvp].
 
 - Added `cast`, `call`, and `handle` functions, and `Envelope` message wrapper
 type, which enforce you get the response you expect from certain messages
+- Added convenient `Server` type alias for processes using `Envelope`s
 - Added `examples/use.hs` to experiment with "use pattern"
 - Moved things to separate modules (everything still re-exported from top-level
 `Drama` module)
