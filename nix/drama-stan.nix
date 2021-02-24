@@ -3,11 +3,6 @@
 let
   drama = haskellPackages.drama;
 
-  configFile = builtins.path {
-    name = "stan.toml";
-    path = ../.stan.toml;
-  };
-
 in
   stdenv.mkDerivation {
     name = "${drama.name}-stan";
@@ -21,7 +16,7 @@ in
     doCheck = true;
 
     checkPhase = ''
-      stan --hiedir "${drama.hie}" --config-file ${configFile}
+      stan --hiedir "${drama.hie}"
       touch "$out"
     '';
   }
