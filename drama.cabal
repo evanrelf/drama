@@ -37,6 +37,7 @@ common common
 
 
 common executable
+  build-depends: drama
   ghc-options:
     -threaded
     -rtsopts
@@ -69,16 +70,13 @@ library
 executable example-shared-resource
   import: common, executable, hie
   main-is: examples/shared-resource.hs
-  build-depends: drama
 
 
 executable example-use
   import: common, executable, hie
   main-is: examples/use.hs
-  build-depends: drama
 
 
 executable example-workers
   import: common, executable, hie
   main-is: examples/workers.hs
-  build-depends: drama
