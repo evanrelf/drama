@@ -3,6 +3,8 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 
+{-# OPTIONS_HADDOCK not-home #-}
+
 -- |
 -- Module:     Drama.Server.Internal
 -- Stability:  experimental
@@ -74,7 +76,7 @@ data Envelope (msg :: Type -> Type)
 -- @since 0.3.0.0
 cast
   :: Address (Envelope msg)
-  -- ^ Other process' address
+  -- ^ Process' address
   -> msg ()
   -- ^ Message to send (has no response)
   -> Process _msg ()
@@ -87,7 +89,7 @@ cast addr msg = send addr (Cast msg)
 call
   :: HasMsg res
   => Address (Envelope msg)
-  -- ^ Other process' address
+  -- ^ Process' address
   -> msg res
   -- ^ Message to send
   -> Process _msg res
