@@ -8,7 +8,8 @@
 -- TODO
 
 module Drama.Server
-  ( Envelope
+  ( Server
+  , Envelope
   , cast
   , call
   , handle
