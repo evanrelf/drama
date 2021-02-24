@@ -8,8 +8,13 @@
 -- Actor library for Haskell
 
 module Drama
-  ( module Drama.Process
+  ( -- * Lower-level processes
+    module Drama.Process
+
+    -- * Higher-level processes
   , module Drama.Server
+
+    -- * Helpful utilities
   , module Drama.Loop
 
     -- * Re-exports
