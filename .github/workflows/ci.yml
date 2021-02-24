@@ -5,7 +5,7 @@ on:
       - main
   pull_request:
 jobs:
-  build-8.6.5:
+  build-ghc865:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
@@ -22,7 +22,7 @@ jobs:
       - run: nix-build --attr drama --argstr ghcVersion "ghc865"
         name: nix-build
 
-  build-8.8.4:
+  build-ghc884:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
@@ -39,7 +39,7 @@ jobs:
       - run: nix-build --attr drama --argstr ghcVersion "ghc884"
         name: nix-build
 
-  build-8.10.3:
+  build-ghc8103:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
