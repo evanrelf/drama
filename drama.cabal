@@ -66,16 +66,6 @@ library
     , Drama.Server.Internal
 
 
-benchmark bench
-  import: common, stan
-  type: exitcode-stdio-1.0
-  hs-source-dirs: bench
-  main-is: Main.hs
-  build-depends:
-    , criterion ^>= 1.5.9.0
-    , drama
-
-
 executable example-shared-resource
   import: common, executable, stan
   main-is: examples/shared-resource.hs
