@@ -1,20 +1,18 @@
-let
-  pkgs = import ./nix/pkgs.nix;
+{ pkgs ? import ./nix/pkgs.nix }:
 
-in
-  pkgs.haskellPackages.shellFor {
-    packages = p: [
-      (pkgs.haskell.lib.doBenchmark p.drama)
-    ];
+pkgs.haskellPackages.shellFor {
+  packages = p: [
+    (pkgs.haskell.lib.doBenchmark p.drama)
+  ];
 
-    buildInputs = [
-      pkgs.cabal-install
-      pkgs.ghcid
-      pkgs.haskellPackages.stan
-      pkgs.hlint
-    ];
+  buildInputs = [
+    pkgs.cabal-install
+    pkgs.ghcid
+    pkgs.haskellPackages.stan
+    pkgs.hlint
+  ];
 
-    doBenchmark = true;
+  doBenchmark = true;
 
-    withHoogle = true;
-  }
+  withHoogle = true;
+}
