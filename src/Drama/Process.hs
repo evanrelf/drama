@@ -8,26 +8,29 @@
 -- TODO
 
 module Drama.Process
-  ( -- * Spawning processes
-    spawn
-  , spawn_
+  ( Process
+
+    -- * Spawning processes
+  , spawn
   , wait
 
-    -- * Sending and receiving messages
+    -- * Sending messages
+  , Address
   , send
+  , here
+
+    -- * Receiving messages
   , receive
   , tryReceive
-  , here
 
     -- * Running your program
   , run
-  , run_
 
-    -- * Types
-  , Process
-  , Address
-  , HasMsg
+    -- * Not receiving messages
   , NoMsg
+  , spawn_
+  , run_
+  , HasMsg
   )
 where
 
