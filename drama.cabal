@@ -43,7 +43,7 @@ common executable
     -with-rtsopts=-N
 
 
-common stan
+common hie
   if impl(ghc >= 8.8)
     ghc-options:
       -fwrite-ide-info
@@ -51,7 +51,7 @@ common stan
 
 
 library
-  import: common, stan
+  import: common, hie
   hs-source-dirs: src
   build-depends:
     , ki           ^>= 0.2.0.1
@@ -67,18 +67,18 @@ library
 
 
 executable example-shared-resource
-  import: common, executable, stan
+  import: common, executable, hie
   main-is: examples/shared-resource.hs
   build-depends: drama
 
 
 executable example-use
-  import: common, executable, stan
+  import: common, executable, hie
   main-is: examples/use.hs
   build-depends: drama
 
 
 executable example-workers
-  import: common, executable, stan
+  import: common, executable, hie
   main-is: examples/workers.hs
   build-depends: drama
