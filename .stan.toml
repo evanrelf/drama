@@ -1,8 +1,0 @@
-# Ignore "Data types with non-strict fields" for `Address` and `Mailbox`, which
-# may throw an exception when evaluated if `msg ~ NoMsg`.
-
-[[ignore]]
-id = "OBS-STAN-0206-SbcXYe-74:5"
-
-[[ignore]]
-id = "OBS-STAN-0206-SbcXYe-75:5"
