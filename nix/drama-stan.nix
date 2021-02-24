@@ -1,7 +1,12 @@
 { haskellPackages, stdenv }:
 
 let
-  drama = haskellPackages.drama;
+  drama = haskellPackages.drama.overrideAttrs (old: {
+    outputs = (old.outputs or []) ++ [ "hie" ];
+    postBuild = (old.postBuild or "") + ''
+      cp -R .hie $hie
+    '';
+  });
 
 in
   stdenv.mkDerivation {
