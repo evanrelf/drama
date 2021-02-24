@@ -59,6 +59,7 @@ library
     , unagi-chan   ^>= 0.4.1.3
   exposed-modules:
     , Drama
+    , Drama.Loop
     , Drama.Process
     , Drama.Process.Internal
     , Drama.Reexports
