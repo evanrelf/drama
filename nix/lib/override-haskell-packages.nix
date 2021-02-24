@@ -1,4 +1,4 @@
-{ compiler ? null
+{ ghcVersion ? null
 , packages ? {}
 , override ? {}
 , overrideCabal ? {}
@@ -31,9 +31,9 @@ let
       pkgsPrev.lib.mapAttrs applyOverride overrideAttrs;
 
   haskellPackages =
-    (if compiler == null
+    (if ghcVersion == null
        then pkgsPrev.haskellPackages
-       else pkgsPrev.haskell.packages."${compiler}"
+       else pkgsPrev.haskell.packages."${ghcVersion}"
     ).override (old: {
       overrides =
         pkgsPrev.lib.fold
