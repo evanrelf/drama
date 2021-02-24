@@ -1,4 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE GADTSyntax #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
@@ -32,42 +33,10 @@ type Server msg a = Process (Envelope msg) a
 -- Higher-kinded message types are defined as GADTs with a type parameter. This
 -- allows specifying the response type for messages.
 --
--- ===== __Example__
---
--- A server which encapsulates a piece of mutable state. Its @StateMsg@ type
--- specifies which messages it accepts, which messages return a response, and
--- what type that response is.
---
--- > data StateMsg s res where
--- >   GetState :: StateMsg s s
--- >   GetsState :: (s -> a) -> StateMsg s a
--- >   PutState :: s -> StateMsg s ()
--- >   ModifyState :: (s -> s) -> StateMsg s ()
--- >
--- > state :: s -> Server (StateMsg s) ()
--- > state s0 = do
--- >   stateIORef <- liftIO $ newIORef s0
--- >
--- >   forever $ receive >>= handle \case
--- >     GetState ->
--- >       liftIO $ readIORef stateIORef
--- >
--- >     GetsState f -> do
--- >       s <- liftIO $ readIORef stateIORef
--- >       pure (f s)
--- >
--- >     PutState s ->
--- >       liftIO $ writeIORef stateIORef s
--- >
--- >     ModifyState f ->
--- >       liftIO $ modifyIORef stateIORef f
---
 -- @since 0.3.0.0
-data Envelope (msg :: Type -> Type)
-  = Cast !(msg ())
-  -- ^ Case where message needs to response (produced by `cast`)
-  | forall res. HasMsg res => Call !(Address res) !(msg res)
-  -- ^ Case where message requires a response (produced by `call`)
+data Envelope (msg :: Type -> Type) where
+  Cast :: msg () -> Envelope msg
+  Call :: HasMsg res => Address res -> msg res -> Envelope msg
 
 
 -- | Send a message to another process, expecting no response. Returns
@@ -78,7 +47,7 @@ cast
   :: Address (Envelope msg)
   -- ^ Process' address
   -> msg ()
-  -- ^ Message to send (has no response)
+  -- ^ Message to send
   -> Process _msg ()
 cast addr msg = send addr (Cast msg)
 
@@ -101,14 +70,15 @@ call addr msg = do
   liftIO $ Unagi.readChan outChan
 
 
--- | Handle messages which may require a response.
+-- | Handle messages which may require a response. This is the only way to
+-- consume an `Envelope`.
 --
 -- @since 0.3.0.0
 handle
   :: (forall res. msg res -> Process _msg res)
   -- ^ Callback function that responds to messages
   -> Envelope msg
-  -- ^ Message which may require a response
+  -- ^ Message to handle
   -> Process _msg ()
 handle callback = \case
   Cast msg ->

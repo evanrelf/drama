@@ -4,6 +4,9 @@
 -- License:    BSD-3-Clause
 -- Copyright:  © 2021 Evan Relf
 -- Maintainer: evan@evanrelf.com
+--
+-- Lower-level processes, supporting `spawn`, `send`, `receive` and other
+-- related operations. Inspired by Elixir and Erlang's processes.
 
 module Drama.Process
   ( Process
@@ -31,9 +34,9 @@ module Drama.Process
   , HasMsg
 
     -- * Re-exports
-  , MonadIO (..)
+  , liftIO
   )
 where
 
-import Control.Monad.IO.Class (MonadIO (..))
+import Control.Monad.IO.Class (liftIO)
 import Drama.Process.Internal

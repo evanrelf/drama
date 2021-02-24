@@ -43,7 +43,8 @@ import Prelude hiding (MonadFail)
 #endif
 
 
--- | TODO
+-- | Monad supporting actor operations. Inspired by Elixir and Erlang's
+-- processes.
 --
 -- @since 0.3.0.0
 newtype Process msg a = Process (ReaderT (ProcessEnv msg) IO a)
@@ -81,18 +82,20 @@ data ProcessEnv msg = ProcessEnv
     -- ^ Current process' address.
   , mailbox :: Mailbox msg
     -- ^ Current process' mailbox.
-  , scope :: !Scope
+  , scope :: Scope
     -- ^ Current process' token used for spawning threads.
   }
 
 
--- | TODO
+-- | Address for sending messages to a process. Obtained by running `spawn`,
+-- `here`, or `receive` (if another process sends you an address).
 --
 -- @since 0.3.0.0
 newtype Address msg = Address (Unagi.InChan msg)
 
 
--- | TODO
+-- | Mailbox where a process receives messages. Cannot be shared with other
+-- processes; used implicitly by `receive` and `tryReceive`.
 --
 -- @since 0.3.0.0
 newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
