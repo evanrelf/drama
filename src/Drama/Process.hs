@@ -6,40 +6,28 @@
 -- Maintainer: evan@evanrelf.com
 --
 -- TODO
---
 
 module Drama.Process
-  ( Process
-
-    -- * Spawning processes
-  , spawn
+  ( -- * Spawning processes
+    spawn
   , spawn_
   , wait
 
-    -- * Messages
-
-    -- ** High-level API
-  , cast
-  , call
-  , handle
-
-    -- ** Low-level API
+    -- * Sending and receiving messages
   , send
   , receive
   , tryReceive
-
-    -- ** Addresses
-  , Address
   , here
-
-    -- ** Message types
-  , HasMsg
-  , NoMsg
-  , Envelope
 
     -- * Running your program
   , run
   , run_
+
+    -- * Types
+  , Process
+  , Address
+  , HasMsg
+  , NoMsg
   )
 where
 
