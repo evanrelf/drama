@@ -16,13 +16,9 @@ module Drama
 
     -- * Helpful utilities
   , module Drama.Loop
-
-    -- * Re-exports
-  , module Drama.Reexports
   )
 where
 
 import Drama.Loop
 import Drama.Process
-import Drama.Reexports
 import Drama.Server

@@ -31,7 +31,11 @@ module Drama.Process
   , spawn_
   , run_
   , HasMsg
+
+    -- * Re-exports
+  , MonadIO (..)
   )
 where
 
+import Control.Monad.IO.Class (MonadIO (..))
 import Drama.Process.Internal
