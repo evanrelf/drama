@@ -31,6 +31,7 @@ let
 
   makeJob = command: {
     runs-on = "ubuntu-latest";
+    needs = [ "check-ci-config" ];
     steps = [
       checkout
       installNix

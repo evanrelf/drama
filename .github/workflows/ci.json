@@ -1,6 +1,9 @@
 {
   "jobs": {
     "build-ghc8103": {
+      "needs": [
+        "check-ci-config"
+      ],
       "runs-on": "ubuntu-latest",
       "steps": [
         {
@@ -29,6 +32,9 @@
       ]
     },
     "build-ghc865": {
+      "needs": [
+        "check-ci-config"
+      ],
       "runs-on": "ubuntu-latest",
       "steps": [
         {
@@ -57,6 +63,9 @@
       ]
     },
     "build-ghc884": {
+      "needs": [
+        "check-ci-config"
+      ],
       "runs-on": "ubuntu-latest",
       "steps": [
         {
