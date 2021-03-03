@@ -15,12 +15,10 @@
 
 module Drama.Server.Internal where
 
+import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar, takeMVar)
 import Control.Monad.IO.Class (MonadIO (..))
 import Data.Kind (Type)
-import Drama.Process (HasMsg, Process, send)
-import Drama.Process.Internal (Address (..))
-
-import qualified Control.Concurrent.Chan.Unagi as Unagi
+import Drama.Process (Address, HasMsg, Process, send)
 
 
 -- | @since 0.3.0.0
@@ -36,7 +34,7 @@ type Server msg a = Process (Envelope msg) a
 -- @since 0.3.0.0
 data Envelope (msg :: Type -> Type) where
   Cast :: msg () -> Envelope msg
-  Call :: HasMsg res => Address res -> msg res -> Envelope msg
+  Call :: HasMsg res => MVar res -> msg res -> Envelope msg
 
 
 -- | Send a message to another process, expecting no response. Returns
@@ -64,10 +62,9 @@ call
   -> Process _msg res
   -- ^ Response
 call addr msg = do
-  (inChan, outChan) <- liftIO Unagi.newChan
-  let returnAddr = Address inChan
-  send addr (Call returnAddr msg)
-  liftIO $ Unagi.readChan outChan
+  resMVar <- liftIO newEmptyMVar
+  send addr (Call resMVar msg)
+  liftIO $ takeMVar resMVar
 
 
 -- | Handle messages which may require a response. This is the only way to
@@ -83,6 +80,6 @@ handle
 handle callback = \case
   Cast msg ->
     callback msg
-  Call returnAddr msg -> do
+  Call resMVar msg -> do
     res <- callback msg
-    send returnAddr res
+    liftIO $ putMVar resMVar res

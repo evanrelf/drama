@@ -7,6 +7,8 @@ to the [Haskell Package Versioning Policy][pvp].
 
 ## [Unreleased]
 
+- Send `MVar` instead of `Unagi.Chan` in `Envelope`
+
 ## [0.3.0.0] - 2021-02-23
 
 ### Added
