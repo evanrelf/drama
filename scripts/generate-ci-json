@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+IFS=$'\n\t'
+
+command -v nix-instantiate >/dev/null 2>&1 \
+  || (echo "Missing 'nix-instantiate'" >&2; exit 1)
+
+command -v jq >/dev/null 2>&1 \
+  || (echo "Missing 'jq'" >&2; exit 1)
+
+nix-instantiate \
+  --eval \
+  --strict \
+  --json \
+  nix/ci.nix \
+  | jq . \
+  > .github/workflows/ci.json
