@@ -21,6 +21,14 @@ let
     };
   };
 
+  check-ci-config = {
+    runs-on = "ubuntu-latest";
+    steps = [
+      checkout
+      { run = "./scripts/generate-ci-json && git diff --exit-code"; }
+    ];
+  };
+
   makeJob = command: {
     runs-on = "ubuntu-latest";
     steps = [
@@ -40,12 +48,7 @@ in {
   };
 
   jobs = {
-    check-ci-config = {
-      runs-on = "ubuntu-latest";
-      steps = [
-        { run = "./scripts/generate-ci-json && git diff --exit-code"; }
-      ];
-    };
+    inherit check-ci-config;
 
     build-ghc865 =
       makeJob "nix-build --attr drama --argstr ghcVersion 'ghc865'";

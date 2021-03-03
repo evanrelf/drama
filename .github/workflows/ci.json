@@ -88,6 +88,10 @@
       "runs-on": "ubuntu-latest",
       "steps": [
         {
+          "name": "Checkout",
+          "uses": "actions/checkout@v2.3.4"
+        },
+        {
           "run": "./scripts/generate-ci-json && git diff --exit-code"
         }
       ]
