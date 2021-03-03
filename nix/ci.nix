@@ -26,7 +26,7 @@ let
     steps = [
       checkout
       installNix
-      { run = "./scripts/generate-ci-json && git diff --exit-code"; }
+      { run = "./scripts/generate-ci-config && git diff --exit-code"; }
     ];
   };
 

@@ -15,4 +15,4 @@ nix-instantiate \
   --json \
   nix/ci.nix \
   | jq . \
-  > .github/workflows/ci.json
+  > .github/workflows/ci.yml
