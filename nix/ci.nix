@@ -25,6 +25,7 @@ let
     runs-on = "ubuntu-latest";
     steps = [
       checkout
+      installNix
       { run = "./scripts/generate-ci-json && git diff --exit-code"; }
     ];
   };
