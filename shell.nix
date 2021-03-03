@@ -1,4 +1,6 @@
-{ pkgs ? import ./nix/pkgs.nix }:
+{ pkgs ? import ./nix/pkgs.nix { inherit ghcVersion; }
+, ghcVersion ? null
+}:
 
 pkgs.haskellPackages.shellFor {
   packages = p: [
