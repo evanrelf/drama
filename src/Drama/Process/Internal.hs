@@ -115,7 +115,6 @@ newtype Scope = Scope Ki.Scope
 type family HasMsg msg :: Constraint where
   HasMsg NoMsg = TypeError ('Text "Processes with 'msg ~ NoMsg' cannot receive messages")
   HasMsg Void = TypeError ('Text "Use 'msg ~ NoMsg' instead of 'msg ~ Void' for processes which do not receive messages")
-  HasMsg () = TypeError ('Text "Use 'msg ~ NoMsg' instead of 'msg ~ ()' for processes which do not receive messages")
   HasMsg msg = ()
 
 

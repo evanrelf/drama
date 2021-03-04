@@ -8,6 +8,11 @@ to the [Haskell Package Versioning Policy][pvp].
 ## [Unreleased]
 
 - Send `MVar` instead of `Unagi.Chan` in `Envelope`
+- Allow using `call` with response type of `()`
+
+  So that you can send synchronous/blocking messages that don't have a
+  meaningful response. Useful if you need to wait until a message is handled
+  before proceeding.
 
 ## [0.3.0.0] - 2021-02-23
 
