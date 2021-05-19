@@ -6,15 +6,67 @@
 -- Maintainer: evan@evanrelf.com
 --
 -- Actor library for Haskell
+--
+-- ===== __Example__
+--
+-- A server which encapsulates a piece of mutable state. Its @StateMsg@ type
+-- specifies which messages it accepts, which messages return a response, and
+-- what type that response is.
+--
+-- > data StateMsg s res where
+-- >   GetState :: StateMsg s s
+-- >   GetsState :: (s -> a) -> StateMsg s a
+-- >   PutState :: s -> StateMsg s ()
+-- >   ModifyState :: (s -> s) -> StateMsg s ()
+-- >
+-- > state :: s -> Server (StateMsg s) ()
+-- > state s0 = do
+-- >   stateIORef <- liftIO $ newIORef s0
+-- >
+-- >   forever $ receive >>= handle \case
+-- >     GetState ->
+-- >       liftIO $ readIORef stateIORef
+-- >
+-- >     GetsState f -> do
+-- >       s <- liftIO $ readIORef stateIORef
+-- >       pure (f s)
+-- >
+-- >     PutState s ->
+-- >       liftIO $ writeIORef stateIORef s
+-- >
+-- >     ModifyState f ->
+-- >       liftIO $ modifyIORef stateIORef f
 
 module Drama
-  ( -- * Lower-level processes
-    module Drama.Process
+  ( Process
+  , Server
+  , Envelope
 
-    -- * Higher-level processes
-  , module Drama.Server
+    -- * Spawning processes
+  , spawn
+  , wait
+
+    -- * Sending messages
+  , Address
+  , cast
+  , call
+  , send
+  , here
+
+    -- * Receiving messages
+  , handle
+  , receive
+  , tryReceive
+
+    -- * Running your program
+  , run
+
+    -- * Not receiving messages
+  , NoMsg
+  , spawn_
+  , run_
+  , HasMsg
   )
 where
 
-import Drama.Process
-import Drama.Server
+import Drama.Internal
