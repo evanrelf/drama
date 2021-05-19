@@ -71,8 +71,3 @@ executable example-shared-resource
 executable example-use
   import: common, executable, hie
   main-is: examples/use.hs
-
-
-executable example-workers
-  import: common, executable, hie
-  main-is: examples/workers.hs
