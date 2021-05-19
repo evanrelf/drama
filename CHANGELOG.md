@@ -11,6 +11,8 @@ to the [Haskell Package Versioning Policy][pvp].
 - Rename "process" to "actor" everywhere
 - Consolidate everything under `Drama` and `Drama.Internal` modules
 - Remove `Drama.Loop` module
+- Make `tryReceive` indicate whether a message was received by returning a
+  `Bool`
 - Rename `run{,_}` to `runActor{,_}`
 - Add `Actor_` convenience type synonym
 - Send `MVar` instead of `Unagi.Chan` in `Envelope`

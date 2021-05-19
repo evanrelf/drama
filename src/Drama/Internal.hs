@@ -224,19 +224,21 @@ receive callback = do
 tryReceive
   :: (forall res. msg res -> Actor msg res)
   -- ^ Callback function that responds to messages
-  -> Actor msg ()
+  -> Actor msg Bool
 tryReceive callback = do
   Mailbox outChan <- Actor $ asks mailbox
   (element, _) <- liftIO $ Unagi.tryReadChan outChan
   envelope <- liftIO $ Unagi.tryRead element
   case envelope of
     Nothing ->
-      pure ()
-    Just (Cast msg) ->
+      pure False
+    Just (Cast msg) -> do
       callback msg
+      pure True
     Just (Call resMVar msg) -> do
       res <- callback msg
       liftIO $ putMVar resMVar res
+      pure True
 
 
 -- | Run a top-level actor. Intended to be used at the entry point of your
