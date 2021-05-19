@@ -55,12 +55,12 @@ module Drama
   , tryReceive
 
     -- * Running your program
-  , run
+  , runActor
 
     -- * Not receiving messages
   , NoMsg
   , spawn_
-  , run_
+  , runActor_
   )
 where
 

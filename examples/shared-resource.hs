@@ -14,7 +14,7 @@ import Prelude hiding (log)
 
 
 main :: IO ()
-main = run_ do
+main = runActor_ do
   -- Spawn `logger` actor, which starts waiting for requests.
   loggerAddr <- spawn logger
 
