@@ -10,9 +10,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
--- For `HasMsg msg`
-{-# OPTIONS_GHC -Wno-redundant-constraints #-}
-
 {-# OPTIONS_HADDOCK not-home #-}
 {-# OPTIONS_HADDOCK prune #-}
 
@@ -31,9 +28,7 @@ import Control.Monad (MonadPlus)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Reader (ReaderT (..), asks)
-import Data.Kind (Constraint, Type)
-import Data.Void (Void)
-import GHC.TypeLits (ErrorMessage (..), TypeError)
+import Data.Kind (Type)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
 import qualified Ki
@@ -51,7 +46,7 @@ import Prelude hiding (MonadFail)
 -- processes.
 --
 -- @since 0.3.0.0
-newtype Process msg a = Process (ReaderT (ProcessEnv msg) IO a)
+newtype Process (msg :: Type -> Type) a = Process (ReaderT (ProcessEnv msg) IO a)
   deriving newtype
     ( Functor
     , Applicative
@@ -66,8 +61,16 @@ newtype Process msg a = Process (ReaderT (ProcessEnv msg) IO a)
     )
 
 
--- | @since 0.3.0.0
-type Server msg a = Process (Envelope msg) a
+-- | Wrapper around higher-kinded message types, to make them compatible with
+-- the lower-level `Process` machinery.
+--
+-- Higher-kinded message types are defined as GADTs with a type parameter. This
+-- allows specifying the response type for messages.
+--
+-- @since 0.3.0.0
+data Envelope (msg :: Type -> Type) where
+  Cast :: msg () -> Envelope msg
+  Call :: MVar res -> msg res -> Envelope msg
 
 
 -- | Provided some `ProcessEnv`, convert a `Process` action into an `IO`
@@ -99,14 +102,14 @@ data ProcessEnv msg = ProcessEnv
 -- `here`, or `receive` (if another process sends you an address).
 --
 -- @since 0.3.0.0
-newtype Address msg = Address (Unagi.InChan msg)
+newtype Address msg = Address (Unagi.InChan (Envelope msg))
 
 
 -- | Mailbox where a process receives messages. Cannot be shared with other
 -- processes; used implicitly by `receive` and `tryReceive`.
 --
 -- @since 0.3.0.0
-newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
+newtype Mailbox msg = Mailbox (Unagi.OutChan (Envelope msg))
 
 
 -- | Token delimiting the lifetime of child processes (threads) created by a
@@ -116,40 +119,17 @@ newtype Mailbox msg = Mailbox (Unagi.OutChan msg)
 newtype Scope = Scope Ki.Scope
 
 
--- | Constraint which prevents setting `msg ~ Void`, and provides helpful type
--- errors.
---
--- @since 0.3.0.0
-type family HasMsg msg :: Constraint where
-  HasMsg NoMsg = TypeError ('Text "Processes with 'msg ~ NoMsg' cannot receive messages")
-  HasMsg Void = TypeError ('Text "Use 'msg ~ NoMsg' instead of 'msg ~ Void' for processes which do not receive messages")
-  HasMsg msg = ()
-
-
 -- | Message type used by processes which do not receive messages.
 --
 -- @since 0.3.0.0
-data NoMsg
-
-
--- | Wrapper around higher-kinded message types, to make them compatible with
--- the lower-level `Process` machinery.
---
--- Higher-kinded message types are defined as GADTs with a type parameter. This
--- allows specifying the response type for messages.
---
--- @since 0.3.0.0
-data Envelope (msg :: Type -> Type) where
-  Cast :: msg () -> Envelope msg
-  Call :: HasMsg res => MVar res -> msg res -> Envelope msg
+data NoMsg res
 
 
 -- | Spawn a child process and return its address.
 --
 -- @since 0.3.0.0
 spawn
-  :: HasMsg msg
-  => Process msg ()
+  :: Process msg ()
   -- ^ Process to spawn
   -> Process _msg (Address msg)
   -- ^ Spawned process' address
@@ -167,8 +147,8 @@ spawn process = do
 -- @since 0.3.0.0
 spawn_ :: Process NoMsg () -> Process msg ()
 spawn_ process = do
-  let address = Address (error voidMsgError)
-  let mailbox = Mailbox (error voidMsgError)
+  let address = Address (error noMsgError)
+  let mailbox = Mailbox (error noMsgError)
   spawnImpl address mailbox process
 
 
@@ -194,21 +174,8 @@ wait = do
 -- | Return the current process' address.
 --
 -- @since 0.3.0.0
-here :: HasMsg msg => Process msg (Address msg)
+here :: Process msg (Address msg)
 here = Process $ asks address
-
-
--- | Send a message to another process.
---
--- @since 0.3.0.0
-send
-  :: HasMsg msg
-  => Address msg
-  -- ^ Other process' address
-  -> msg
-  -- ^ Message to send
-  -> Process _msg ()
-send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 
 
 -- | Send a message to another process, expecting no response. Returns
@@ -216,67 +183,68 @@ send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 --
 -- @since 0.3.0.0
 cast
-  :: Address (Envelope msg)
+  :: Address msg
   -- ^ Process' address
   -> msg ()
   -- ^ Message to send
   -> Process _msg ()
-cast addr msg = send addr (Cast msg)
+cast (Address inChan) msg = liftIO $ Unagi.writeChan inChan (Cast msg)
 
 
 -- | Send a message to another process, and wait for a response.
 --
 -- @since 0.3.0.0
 call
-  :: HasMsg res
-  => Address (Envelope msg)
+  :: Address msg
   -- ^ Process' address
   -> msg res
   -- ^ Message to send
   -> Process _msg res
   -- ^ Response
-call addr msg = do
-  resMVar <- liftIO newEmptyMVar
-  send addr (Call resMVar msg)
-  liftIO $ takeMVar resMVar
+call (Address inChan) msg = liftIO do
+  resMVar <- newEmptyMVar
+  Unagi.writeChan inChan (Call resMVar msg)
+  takeMVar resMVar
 
 
 -- | Receive a message. When the mailbox is empty, blocks until a message
 -- arrives.
 --
 -- @since 0.3.0.0
-receive :: HasMsg msg => Process msg msg
-receive = do
+receive
+  :: (forall res. msg res -> Process msg res)
+  -- ^ Callback function that responds to messages
+  -> Process msg ()
+receive callback = do
   Mailbox outChan <- Process $ asks mailbox
-  liftIO $ Unagi.readChan outChan
+  envelope <- liftIO $ Unagi.readChan outChan
+  case envelope of
+    Cast msg ->
+      callback msg
+    Call resMVar msg -> do
+      res <- callback msg
+      liftIO $ putMVar resMVar res
 
 
--- | Try to receive a message. When the mailbox is empty, returns `Nothing`.
+-- | Try to receive a message. When the mailbox is empty, returns immediately.
 --
 -- @since 0.3.0.0
-tryReceive :: HasMsg msg => Process msg (Maybe msg)
-tryReceive = do
+tryReceive
+  :: (forall res. msg res -> Process msg res)
+  -- ^ Callback function that responds to messages
+  -> Process msg ()
+tryReceive callback = do
   Mailbox outChan <- Process $ asks mailbox
   (element, _) <- liftIO $ Unagi.tryReadChan outChan
-  liftIO $ Unagi.tryRead element
-
-
--- | Handle messages which may require a response. This is the only way to
--- consume an `Envelope`.
---
--- @since 0.3.0.0
-handle
-  :: (forall res. msg res -> Process _msg res)
-  -- ^ Callback function that responds to messages
-  -> Envelope msg
-  -- ^ Message to handle
-  -> Process _msg ()
-handle callback = \case
-  Cast msg ->
-    callback msg
-  Call resMVar msg -> do
-    res <- callback msg
-    liftIO $ putMVar resMVar res
+  envelope <- liftIO $ Unagi.tryRead element
+  case envelope of
+    Nothing ->
+      pure ()
+    Just (Cast msg) ->
+      callback msg
+    Just (Call resMVar msg) -> do
+      res <- callback msg
+      liftIO $ putMVar resMVar res
 
 
 -- | Run a top-level process. Intended to be used at the entry point of your
@@ -293,7 +261,7 @@ handle callback = \case
 -- @transformers@ or @mtl@.
 --
 -- @since 0.3.0.0
-run :: (HasMsg msg, MonadIO m) => Process msg a -> m a
+run :: MonadIO m => Process msg a -> m a
 run process = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let address = Address inChan
@@ -307,8 +275,8 @@ run process = do
 -- @since 0.3.0.0
 run_ :: MonadIO m => Process NoMsg a -> m a
 run_ process = do
-  let address = Address (error voidMsgError)
-  let mailbox = Mailbox (error voidMsgError)
+  let address = Address (error noMsgError)
+  let mailbox = Mailbox (error noMsgError)
   runImpl address mailbox process
 
 
@@ -319,8 +287,8 @@ runImpl address mailbox process = do
     runProcess ProcessEnv{address, mailbox, scope} process
 
 
-voidMsgError :: String
-voidMsgError = unlines . fmap unwords $
+noMsgError :: String
+noMsgError = unlines . fmap unwords $
   [ ["[!] drama internal error"]
   , []
   , [ "Attempted to use the address or mailbox of a process which cannot send"

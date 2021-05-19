@@ -9,7 +9,7 @@
 --
 -- ===== __Example__
 --
--- A server which encapsulates a piece of mutable state. Its @StateMsg@ type
+-- A process which encapsulates a piece of mutable state. Its @StateMsg@ type
 -- specifies which messages it accepts, which messages return a response, and
 -- what type that response is.
 --
@@ -19,11 +19,11 @@
 -- >   PutState :: s -> StateMsg s ()
 -- >   ModifyState :: (s -> s) -> StateMsg s ()
 -- >
--- > state :: s -> Server (StateMsg s) ()
+-- > state :: s -> Process (StateMsg s) ()
 -- > state s0 = do
 -- >   stateIORef <- liftIO $ newIORef s0
 -- >
--- >   forever $ receive >>= handle \case
+-- >   forever $ receive \case
 -- >     GetState ->
 -- >       liftIO $ readIORef stateIORef
 -- >
@@ -39,8 +39,6 @@
 
 module Drama
   ( Process
-  , Server
-  , Envelope
 
     -- * Spawning processes
   , spawn
@@ -50,11 +48,9 @@ module Drama
   , Address
   , cast
   , call
-  , send
   , here
 
     -- * Receiving messages
-  , handle
   , receive
   , tryReceive
 
@@ -65,7 +61,6 @@ module Drama
   , NoMsg
   , spawn_
   , run_
-  , HasMsg
   )
 where
 
