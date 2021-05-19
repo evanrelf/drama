@@ -58,6 +58,7 @@ module Drama
   , runActor
 
     -- * Not receiving messages
+  , Actor_
   , NoMsg
   , spawn_
   , runActor_

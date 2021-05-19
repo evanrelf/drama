@@ -12,6 +12,7 @@ to the [Haskell Package Versioning Policy][pvp].
 - Consolidate everything under `Drama` and `Drama.Internal` modules
 - Remove `Drama.Loop` module
 - Rename `run{,_}` to `runActor{,_}`
+- Add `Actor_` convenience type synonym
 - Send `MVar` instead of `Unagi.Chan` in `Envelope`
 - Allow using `call` with response type of `()`
 
