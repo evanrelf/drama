@@ -48,7 +48,7 @@ module Drama
   , Address
   , cast
   , call
-  , here
+  , getSelf
 
     -- * Receiving messages
   , receive

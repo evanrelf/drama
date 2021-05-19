@@ -72,7 +72,7 @@ data Envelope (msg :: Type -> Type) where
 -- | Ambient context provided by the `Actor` monad.
 --
 -- Values in `ActorEnv` are scoped to the current actor and cannot be safely
--- shared. Functions like `spawn`, `receive`, and `here` use these values as
+-- shared. Functions like `spawn`, `receive`, and `getSelf` use these values as
 -- implicit parameters to avoid leaking internals (and for convenience).
 --
 -- @since 0.4.0.0
@@ -87,7 +87,7 @@ data ActorEnv msg = ActorEnv
 
 
 -- | Address for sending messages to an actor. Obtained by running `spawn`,
--- `here`, or `receive` (if another actor sends you an address).
+-- `getSelf`, or `receive` (if another actor sends you an address).
 --
 -- @since 0.4.0.0
 newtype Address msg = Address (Unagi.InChan (Envelope msg))
@@ -166,8 +166,8 @@ wait = do
 -- | Return the current actor's address.
 --
 -- @since 0.4.0.0
-here :: Actor msg (Address msg)
-here = Actor $ asks address
+getSelf :: Actor msg (Address msg)
+getSelf = Actor $ asks address
 
 
 -- | Send a message to another actor, expecting no response. Returns immediately

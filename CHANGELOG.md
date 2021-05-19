@@ -14,6 +14,7 @@ to the [Haskell Package Versioning Policy][pvp].
 - Make `tryReceive` indicate whether a message was received by returning a
   `Bool`
 - Rename `run{,_}` to `runActor{,_}`
+- Rename `here` to `getSelf`
 - Add `Actor_` convenience type synonym
 - Send `MVar` instead of `Unagi.Chan` in `Envelope`
 - Allow using `call` with response type of `()`
