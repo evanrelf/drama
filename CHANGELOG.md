@@ -7,13 +7,14 @@ to the [Haskell Package Versioning Policy][pvp].
 
 ## [Unreleased]
 
+- Consolidate everything under `Drama` and `Drama.Internal` modules
+- Remove `Drama.Loop` module
 - Send `MVar` instead of `Unagi.Chan` in `Envelope`
 - Allow using `call` with response type of `()`
 
   So that you can send synchronous/blocking messages that don't have a
   meaningful response. Useful if you need to wait until a message is handled
   before proceeding.
-- Remove `Drama.Loop` module
 
 ## [0.3.0.0] - 2021-02-23
 

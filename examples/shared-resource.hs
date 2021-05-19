@@ -6,6 +6,7 @@ module Main (main) where
 
 import Control.Concurrent (threadDelay)
 import Control.Monad (forever)
+import Control.Monad.IO.Class (liftIO)
 import Drama
 import Prelude hiding (log)
 

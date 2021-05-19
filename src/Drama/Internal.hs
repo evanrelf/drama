@@ -2,8 +2,11 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -14,20 +17,21 @@
 {-# OPTIONS_HADDOCK prune #-}
 
 -- |
--- Module:     Drama.Process.Internal
+-- Module:     Drama.Internal
 -- Stability:  experimental
 -- License:    BSD-3-Clause
 -- Copyright:  © 2021 Evan Relf
 -- Maintainer: evan@evanrelf.com
 
-module Drama.Process.Internal where
+module Drama.Internal where
 
 import Control.Applicative (Alternative)
+import Control.Concurrent (MVar, newEmptyMVar, putMVar, takeMVar)
 import Control.Monad (MonadPlus)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Reader (ReaderT (..), asks)
-import Data.Kind (Constraint)
+import Data.Kind (Constraint, Type)
 import Data.Void (Void)
 import GHC.TypeLits (ErrorMessage (..), TypeError)
 
@@ -60,6 +64,10 @@ newtype Process msg a = Process (ReaderT (ProcessEnv msg) IO a)
 #endif
     , MonadFix
     )
+
+
+-- | @since 0.3.0.0
+type Server msg a = Process (Envelope msg) a
 
 
 -- | Provided some `ProcessEnv`, convert a `Process` action into an `IO`
@@ -122,6 +130,18 @@ type family HasMsg msg :: Constraint where
 --
 -- @since 0.3.0.0
 data NoMsg
+
+
+-- | Wrapper around higher-kinded message types, to make them compatible with
+-- the lower-level `Process` machinery.
+--
+-- Higher-kinded message types are defined as GADTs with a type parameter. This
+-- allows specifying the response type for messages.
+--
+-- @since 0.3.0.0
+data Envelope (msg :: Type -> Type) where
+  Cast :: msg () -> Envelope msg
+  Call :: HasMsg res => MVar res -> msg res -> Envelope msg
 
 
 -- | Spawn a child process and return its address.
@@ -191,6 +211,36 @@ send
 send (Address inChan) msg = liftIO $ Unagi.writeChan inChan msg
 
 
+-- | Send a message to another process, expecting no response. Returns
+-- immediately without blocking.
+--
+-- @since 0.3.0.0
+cast
+  :: Address (Envelope msg)
+  -- ^ Process' address
+  -> msg ()
+  -- ^ Message to send
+  -> Process _msg ()
+cast addr msg = send addr (Cast msg)
+
+
+-- | Send a message to another process, and wait for a response.
+--
+-- @since 0.3.0.0
+call
+  :: HasMsg res
+  => Address (Envelope msg)
+  -- ^ Process' address
+  -> msg res
+  -- ^ Message to send
+  -> Process _msg res
+  -- ^ Response
+call addr msg = do
+  resMVar <- liftIO newEmptyMVar
+  send addr (Call resMVar msg)
+  liftIO $ takeMVar resMVar
+
+
 -- | Receive a message. When the mailbox is empty, blocks until a message
 -- arrives.
 --
@@ -209,6 +259,24 @@ tryReceive = do
   Mailbox outChan <- Process $ asks mailbox
   (element, _) <- liftIO $ Unagi.tryReadChan outChan
   liftIO $ Unagi.tryRead element
+
+
+-- | Handle messages which may require a response. This is the only way to
+-- consume an `Envelope`.
+--
+-- @since 0.3.0.0
+handle
+  :: (forall res. msg res -> Process _msg res)
+  -- ^ Callback function that responds to messages
+  -> Envelope msg
+  -- ^ Message to handle
+  -> Process _msg ()
+handle callback = \case
+  Cast msg ->
+    callback msg
+  Call resMVar msg -> do
+    res <- callback msg
+    liftIO $ putMVar resMVar res
 
 
 -- | Run a top-level process. Intended to be used at the entry point of your
