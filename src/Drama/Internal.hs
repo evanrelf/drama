@@ -57,18 +57,6 @@ newtype Actor (msg :: Type -> Type) a = Actor (ReaderT (ActorEnv msg) IO a)
     )
 
 
--- | Wrapper around higher-kinded message types, to make them compatible with
--- the lower-level `Actor` machinery.
---
--- Higher-kinded message types are defined as GADTs with a type parameter. This
--- allows specifying the response type for messages.
---
--- @since 0.4.0.0
-data Envelope (msg :: Type -> Type) where
-  Cast :: msg () -> Envelope msg
-  Call :: MVar res -> msg res -> Envelope msg
-
-
 -- | Ambient context provided by the `Actor` monad.
 --
 -- Values in `ActorEnv` are scoped to the current actor and cannot be safely
@@ -81,8 +69,9 @@ data ActorEnv msg = ActorEnv
     -- ^ Current actor's address.
   , mailbox :: Mailbox msg
     -- ^ Current actor's mailbox.
-  , scope :: Scope
-    -- ^ Current actor's token used for spawning threads.
+  , scope :: Ki.Scope
+    -- ^ Current actor's token used for spawning threads. Delimits the lifetime
+    -- of child actors (threads).
   }
 
 
@@ -100,11 +89,15 @@ newtype Address msg = Address (Unagi.InChan (Envelope msg))
 newtype Mailbox msg = Mailbox (Unagi.OutChan (Envelope msg))
 
 
--- | Token delimiting the lifetime of child actors (threads) created by an
--- actor.
+-- | Wrapper around higher-kinded message types.
+--
+-- Higher-kinded message types are defined as GADTs with a type parameter. This
+-- allows specifying the response type for messages.
 --
 -- @since 0.4.0.0
-newtype Scope = Scope Ki.Scope
+data Envelope (msg :: Type -> Type) where
+  Cast :: msg () -> Envelope msg
+  Call :: MVar res -> msg res -> Envelope msg
 
 
 -- | Message type used by actors which do not receive messages.
@@ -150,8 +143,8 @@ spawnImpl
   -> Actor msg ()
   -> Actor _msg ()
 spawnImpl address mailbox actor = do
-  Scope kiScope <- Actor $ asks scope
-  liftIO $ Ki.fork_ kiScope $ runActorImpl address mailbox actor
+  scope <- Actor $ asks scope
+  liftIO $ Ki.fork_ scope $ runActorImpl address mailbox actor
 
 
 -- | Block until all child actors have terminated.
@@ -159,8 +152,8 @@ spawnImpl address mailbox actor = do
 -- @since 0.4.0.0
 wait :: Actor msg ()
 wait = do
-  Scope kiScope <- Actor $ asks scope
-  liftIO $ Ki.wait kiScope
+  scope <- Actor $ asks scope
+  liftIO $ Ki.wait scope
 
 
 -- | Return the current actor's address.
@@ -248,7 +241,10 @@ tryReceive callback = do
 -- your program's base monad:
 --
 -- > main :: IO ()
--- > main = runActor do
+-- > main = runActor root
+-- >
+-- > root :: Actor RootMsg ()
+-- > root = do
 -- >   ...
 --
 -- Otherwise, use `runActor` like you would with @run@ functions from libraries
@@ -275,9 +271,8 @@ runActor_ actor = do
 
 
 runActorImpl :: MonadIO m => Address msg -> Mailbox msg -> Actor msg a -> m a
-runActorImpl address mailbox (Actor reader) = do
-  liftIO $ Ki.scoped \kiScope -> do
-    let scope = Scope kiScope
+runActorImpl address mailbox (Actor reader) =
+  liftIO $ Ki.scoped \scope ->
     runReaderT reader ActorEnv{address, mailbox, scope}
 
 
