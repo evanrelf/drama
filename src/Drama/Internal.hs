@@ -113,6 +113,10 @@ newtype Scope = Scope Ki.Scope
 data NoMsg res
 
 
+-- | @since 0.4.0.0
+type Actor_ = Actor NoMsg
+
+
 -- | Spawn a child actor and return its address.
 --
 -- @since 0.4.0.0
@@ -133,7 +137,7 @@ spawn actor = do
 -- (@msg ~ `NoMsg`@). See docs for `spawn` for more information.
 --
 -- @since 0.4.0.0
-spawn_ :: Actor NoMsg () -> Actor msg ()
+spawn_ :: Actor_ () -> Actor msg ()
 spawn_ actor = do
   let address = Address (error noMsgError)
   let mailbox = Mailbox (error noMsgError)
@@ -261,7 +265,7 @@ runActor actor = do
 -- (@msg ~ `NoMsg`@). See docs for `runActor` for more information.
 --
 -- @since 0.4.0.0
-runActor_ :: MonadIO m => Actor NoMsg a -> m a
+runActor_ :: MonadIO m => Actor_ a -> m a
 runActor_ actor = do
   let address = Address (error noMsgError)
   let mailbox = Mailbox (error noMsgError)

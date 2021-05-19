@@ -42,13 +42,13 @@ logger = forever $ receive \case
 
 
 -- | Silly example actor which wants to print to the console
-fizzBuzz :: Address LogMsg -> Actor NoMsg ()
+fizzBuzz :: Address LogMsg -> Actor_ ()
 fizzBuzz loggerAddr = go 0
   where
-    log :: String -> Actor NoMsg ()
+    log :: String -> Actor_ ()
     log string = cast loggerAddr (LogMsg string)
 
-    go :: Int -> Actor NoMsg ()
+    go :: Int -> Actor_ ()
     go n = do
       if | n `mod` 15 == 0 -> log "FizzBuzz"
          | n `mod`  3 == 0 -> log "Fizz"
@@ -62,7 +62,7 @@ fizzBuzz loggerAddr = go 0
 
 
 -- | Silly example actor which wants to print to the console
-navi :: Address LogMsg -> Actor NoMsg ()
+navi :: Address LogMsg -> Actor_ ()
 navi loggerAddr = do
   let log string = cast loggerAddr (LogMsg string)
 
