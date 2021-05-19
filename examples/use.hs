@@ -40,7 +40,7 @@ data CounterMsg res where
   GetCount :: CounterMsg Int
 
 
-counter :: Int -> Process CounterMsg ()
+counter :: Int -> Actor CounterMsg ()
 counter count0 = do
   UseState{get, modify} <- useState count0
 
@@ -51,15 +51,15 @@ counter count0 = do
 
 
 data UseCounter = UseCounter
-  { increment :: forall msg. Int -> Process msg ()
-  , decrement :: forall msg. Int -> Process msg ()
-  , (+=) :: forall msg. Int -> Process msg ()
-  , (-=) :: forall msg. Int -> Process msg ()
-  , getCount :: forall msg. Process msg Int
+  { increment :: forall msg. Int -> Actor msg ()
+  , decrement :: forall msg. Int -> Actor msg ()
+  , (+=) :: forall msg. Int -> Actor msg ()
+  , (-=) :: forall msg. Int -> Actor msg ()
+  , getCount :: forall msg. Actor msg Int
   }
 
 
-useCounter :: Int -> Process msg UseCounter
+useCounter :: Int -> Actor msg UseCounter
 useCounter count0 = do
   counterAddr <- spawn (counter count0)
 
@@ -82,7 +82,7 @@ data StateMsg s res where
   ModifyState :: (s -> s) -> StateMsg s ()
 
 
-state :: s -> Process (StateMsg s) ()
+state :: s -> Actor (StateMsg s) ()
 state s0 = do
   stateIORef <- liftIO $ newIORef s0
 
@@ -102,14 +102,14 @@ state s0 = do
 
 
 data UseState s = UseState
-  { get :: forall msg. Process msg s
-  , gets :: forall a msg. (s -> a) -> Process msg a
-  , put :: forall msg. s -> Process msg ()
-  , modify :: forall msg. (s -> s) -> Process msg ()
+  { get :: forall msg. Actor msg s
+  , gets :: forall a msg. (s -> a) -> Actor msg a
+  , put :: forall msg. s -> Actor msg ()
+  , modify :: forall msg. (s -> s) -> Actor msg ()
   }
 
 
-useState :: s -> Process msg (UseState s)
+useState :: s -> Actor msg (UseState s)
 useState s0 = do
   stateAddr <- spawn (state s0)
 

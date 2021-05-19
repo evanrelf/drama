@@ -9,7 +9,7 @@
 --
 -- ===== __Example__
 --
--- A process which encapsulates a piece of mutable state. Its @StateMsg@ type
+-- An actor which encapsulates a piece of mutable state. Its @StateMsg@ type
 -- specifies which messages it accepts, which messages return a response, and
 -- what type that response is.
 --
@@ -19,7 +19,7 @@
 -- >   PutState :: s -> StateMsg s ()
 -- >   ModifyState :: (s -> s) -> StateMsg s ()
 -- >
--- > state :: s -> Process (StateMsg s) ()
+-- > state :: s -> Actor (StateMsg s) ()
 -- > state s0 = do
 -- >   stateIORef <- liftIO $ newIORef s0
 -- >
@@ -38,9 +38,9 @@
 -- >       liftIO $ modifyIORef stateIORef f
 
 module Drama
-  ( Process
+  ( Actor
 
-    -- * Spawning processes
+    -- * Spawning actors
   , spawn
   , wait
 
