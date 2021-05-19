@@ -5,6 +5,7 @@
 module Main (main) where
 
 import Control.Concurrent (threadDelay)
+import Control.Monad (forever)
 import Drama
 import Prelude hiding (log)
 
@@ -35,19 +36,22 @@ logger = forever do
 
 -- | Silly example process which wants to print to the console
 fizzBuzz :: Address String -> Process NoMsg ()
-fizzBuzz loggerAddr = do
-  let log = send loggerAddr
+fizzBuzz loggerAddr = go 0
+  where
+    log :: String -> Process NoMsg ()
+    log = send loggerAddr
 
-  loop (0 :: Int) \n -> do
-    if | n `mod` 15 == 0 -> log "FizzBuzz"
-       | n `mod`  3 == 0 -> log "Fizz"
-       | n `mod`  5 == 0 -> log "Buzz"
-       | otherwise       -> log (show n)
+    go :: Int -> Process NoMsg ()
+    go n = do
+      if | n `mod` 15 == 0 -> log "FizzBuzz"
+         | n `mod`  3 == 0 -> log "Fizz"
+         | n `mod`  5 == 0 -> log "Buzz"
+         | otherwise       -> log (show n)
 
-    -- Delay included for nicer (slow) output
-    liftIO $ threadDelay 500_000
+      -- Delay included for nicer (slow) output
+      liftIO $ threadDelay 500_000
 
-    continue (n + 1)
+      go (n + 1)
 
 
 -- | Silly example process which wants to print to the console

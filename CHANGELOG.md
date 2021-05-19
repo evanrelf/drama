@@ -13,6 +13,7 @@ to the [Haskell Package Versioning Policy][pvp].
   So that you can send synchronous/blocking messages that don't have a
   meaningful response. Useful if you need to wait until a message is handled
   before proceeding.
+- Remove `Drama.Loop` module
 
 ## [0.3.0.0] - 2021-02-23
 

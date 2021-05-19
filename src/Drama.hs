@@ -13,12 +13,8 @@ module Drama
 
     -- * Higher-level processes
   , module Drama.Server
-
-    -- * Helpful utilities
-  , module Drama.Loop
   )
 where
 
-import Drama.Loop
 import Drama.Process
 import Drama.Server
