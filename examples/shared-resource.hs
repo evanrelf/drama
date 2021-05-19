@@ -15,10 +15,10 @@ import Prelude hiding (log)
 
 main :: IO ()
 main = run_ do
-  -- Spawn `logger` process, which starts waiting for requests.
+  -- Spawn `logger` actor, which starts waiting for requests.
   loggerAddr <- spawn logger
 
-  -- Spawn two noisy processes, `fizzBuzz` and `navi`, which want to constantly
+  -- Spawn two noisy actors, `fizzBuzz` and `navi`, which want to constantly
   -- print to the console. Instead of running `putStrLn`, they will send
   -- messages to `logger`.
   spawn_ (fizzBuzz loggerAddr)
@@ -33,22 +33,22 @@ data LogMsg res where
   LogMsg :: String -> LogMsg ()
 
 
--- | Process which encapsulates access to the console (a shared resource). By
+-- | Actor which encapsulates access to the console (a shared resource). By
 -- sending log messages to `logger`, instead of running `putStrLn` directly, we
--- can avoid interleaving logs from processes running in parallel.
-logger :: Process LogMsg ()
+-- can avoid interleaving logs from actors running in parallel.
+logger :: Actor LogMsg ()
 logger = forever $ receive \case
   LogMsg string -> liftIO $ putStrLn string
 
 
--- | Silly example process which wants to print to the console
-fizzBuzz :: Address LogMsg -> Process NoMsg ()
+-- | Silly example actor which wants to print to the console
+fizzBuzz :: Address LogMsg -> Actor NoMsg ()
 fizzBuzz loggerAddr = go 0
   where
-    log :: String -> Process NoMsg ()
+    log :: String -> Actor NoMsg ()
     log string = cast loggerAddr (LogMsg string)
 
-    go :: Int -> Process NoMsg ()
+    go :: Int -> Actor NoMsg ()
     go n = do
       if | n `mod` 15 == 0 -> log "FizzBuzz"
          | n `mod`  3 == 0 -> log "Fizz"
@@ -61,8 +61,8 @@ fizzBuzz loggerAddr = go 0
       go (n + 1)
 
 
--- | Silly example process which wants to print to the console
-navi :: Address LogMsg -> Process NoMsg ()
+-- | Silly example actor which wants to print to the console
+navi :: Address LogMsg -> Actor NoMsg ()
 navi loggerAddr = do
   let log string = cast loggerAddr (LogMsg string)
 
