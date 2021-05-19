@@ -44,7 +44,7 @@ import Prelude hiding (MonadFail)
 
 -- | Monad supporting actor operations.
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 newtype Actor (msg :: Type -> Type) a = Actor (ReaderT (ActorEnv msg) IO a)
   deriving newtype
     ( Functor
@@ -66,7 +66,7 @@ newtype Actor (msg :: Type -> Type) a = Actor (ReaderT (ActorEnv msg) IO a)
 -- Higher-kinded message types are defined as GADTs with a type parameter. This
 -- allows specifying the response type for messages.
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 data Envelope (msg :: Type -> Type) where
   Cast :: msg () -> Envelope msg
   Call :: MVar res -> msg res -> Envelope msg
@@ -75,7 +75,7 @@ data Envelope (msg :: Type -> Type) where
 -- | Provided some `ActorEnv`, convert a `Actor` action into an `IO`
 -- action.
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 runActor :: MonadIO m => ActorEnv msg -> Actor msg a -> m a
 runActor actorEnv (Actor reader) = liftIO $ runReaderT reader actorEnv
 
@@ -86,7 +86,7 @@ runActor actorEnv (Actor reader) = liftIO $ runReaderT reader actorEnv
 -- shared. Functions like `spawn`, `receive`, and `here` use these values as
 -- implicit parameters to avoid leaking internals (and for convenience).
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 data ActorEnv msg = ActorEnv
   { address :: Address msg
     -- ^ Current actor's address.
@@ -100,33 +100,33 @@ data ActorEnv msg = ActorEnv
 -- | Address for sending messages to an actor. Obtained by running `spawn`,
 -- `here`, or `receive` (if another actor sends you an address).
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 newtype Address msg = Address (Unagi.InChan (Envelope msg))
 
 
 -- | Mailbox where an actor receives messages. Cannot be shared with other
 -- actors; used implicitly by `receive` and `tryReceive`.
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 newtype Mailbox msg = Mailbox (Unagi.OutChan (Envelope msg))
 
 
 -- | Token delimiting the lifetime of child actors (threads) created by an
 -- actor.
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 newtype Scope = Scope Ki.Scope
 
 
 -- | Message type used by actors which do not receive messages.
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 data NoMsg res
 
 
 -- | Spawn a child actor and return its address.
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 spawn
   :: Actor msg ()
   -- ^ Actor to spawn
@@ -143,7 +143,7 @@ spawn actor = do
 -- | More efficient version of `spawn`, for actors which receive no messages
 -- (@msg ~ `NoMsg`@). See docs for `spawn` for more information.
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 spawn_ :: Actor NoMsg () -> Actor msg ()
 spawn_ actor = do
   let address = Address (error noMsgError)
@@ -163,7 +163,7 @@ spawnImpl address mailbox actor = do
 
 -- | Block until all child actors have terminated.
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 wait :: Actor msg ()
 wait = do
   Scope kiScope <- Actor $ asks scope
@@ -172,7 +172,7 @@ wait = do
 
 -- | Return the current actor's address.
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 here :: Actor msg (Address msg)
 here = Actor $ asks address
 
@@ -180,7 +180,7 @@ here = Actor $ asks address
 -- | Send a message to another actor, expecting no response. Returns immediately
 -- without blocking.
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 cast
   :: Address msg
   -- ^ Actor's address
@@ -192,7 +192,7 @@ cast (Address inChan) msg = liftIO $ Unagi.writeChan inChan (Cast msg)
 
 -- | Send a message to another actor, and wait for a response.
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 call
   :: Address msg
   -- ^ Actor's address
@@ -209,7 +209,7 @@ call (Address inChan) msg = liftIO do
 -- | Receive a message. When the mailbox is empty, blocks until a message
 -- arrives.
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 receive
   :: (forall res. msg res -> Actor msg res)
   -- ^ Callback function that responds to messages
@@ -227,7 +227,7 @@ receive callback = do
 
 -- | Try to receive a message. When the mailbox is empty, returns immediately.
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 tryReceive
   :: (forall res. msg res -> Actor msg res)
   -- ^ Callback function that responds to messages
@@ -259,7 +259,7 @@ tryReceive callback = do
 -- Otherwise, use `run` like you would with @run@ functions from libraries like
 -- @transformers@ or @mtl@.
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 run :: MonadIO m => Actor msg a -> m a
 run actor = do
   (inChan, outChan) <- liftIO Unagi.newChan
@@ -271,7 +271,7 @@ run actor = do
 -- | More efficient version of `run`, for actors which receive no messages
 -- (@msg ~ `NoMsg`@). See docs for `run` for more information.
 --
--- @since 0.3.0.0
+-- @since 0.4.0.0
 run_ :: MonadIO m => Actor NoMsg a -> m a
 run_ actor = do
   let address = Address (error noMsgError)
