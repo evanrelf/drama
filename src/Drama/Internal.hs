@@ -72,14 +72,6 @@ data Envelope (msg :: Type -> Type) where
   Call :: MVar res -> msg res -> Envelope msg
 
 
--- | Provided some `ActorEnv`, convert a `Actor` action into an `IO`
--- action.
---
--- @since 0.4.0.0
-runActor :: MonadIO m => ActorEnv msg -> Actor msg a -> m a
-runActor actorEnv (Actor reader) = liftIO $ runReaderT reader actorEnv
-
-
 -- | Ambient context provided by the `Actor` monad.
 --
 -- Values in `ActorEnv` are scoped to the current actor and cannot be safely
@@ -280,10 +272,10 @@ run_ actor = do
 
 
 runImpl :: MonadIO m => Address msg -> Mailbox msg -> Actor msg a -> m a
-runImpl address mailbox actor = do
+runImpl address mailbox (Actor reader) = do
   liftIO $ Ki.scoped \kiScope -> do
     let scope = Scope kiScope
-    runActor ActorEnv{address, mailbox, scope} actor
+    runReaderT reader ActorEnv{address, mailbox, scope}
 
 
 noMsgError :: String
