@@ -4,6 +4,7 @@
 
 module Main (main) where
 
+import Control.Monad (forever)
 import Data.Function ((&))
 import Drama
 

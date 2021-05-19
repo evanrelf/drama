@@ -6,7 +6,7 @@
 
 module Main (main) where
 
-import Control.Monad (when)
+import Control.Monad (forever, when)
 import Data.IORef (modifyIORef, newIORef, readIORef, writeIORef)
 import Drama
 import System.Exit (exitSuccess)
