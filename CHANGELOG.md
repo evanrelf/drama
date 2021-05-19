@@ -7,6 +7,7 @@ to the [Haskell Package Versioning Policy][pvp].
 
 ## [Unreleased]
 
+- Remove low-level `Process` API in favor of high-level `Server` API
 - Consolidate everything under `Drama` and `Drama.Internal` modules
 - Remove `Drama.Loop` module
 - Send `MVar` instead of `Unagi.Chan` in `Envelope`
