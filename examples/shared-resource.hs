@@ -1,4 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE NumericUnderscores #-}
 
@@ -26,21 +28,25 @@ main = run_ do
   wait
 
 
+-- | Message type for `logger`
+data LogMsg res where
+  LogMsg :: String -> LogMsg ()
+
+
 -- | Process which encapsulates access to the console (a shared resource). By
 -- sending log messages to `logger`, instead of running `putStrLn` directly, we
 -- can avoid interleaving logs from processes running in parallel.
-logger :: Process String ()
-logger = forever do
-  string <- receive
-  liftIO $ putStrLn string
+logger :: Process LogMsg ()
+logger = forever $ receive \case
+  LogMsg string -> liftIO $ putStrLn string
 
 
 -- | Silly example process which wants to print to the console
-fizzBuzz :: Address String -> Process NoMsg ()
+fizzBuzz :: Address LogMsg -> Process NoMsg ()
 fizzBuzz loggerAddr = go 0
   where
     log :: String -> Process NoMsg ()
-    log = send loggerAddr
+    log string = cast loggerAddr (LogMsg string)
 
     go :: Int -> Process NoMsg ()
     go n = do
@@ -56,9 +62,9 @@ fizzBuzz loggerAddr = go 0
 
 
 -- | Silly example process which wants to print to the console
-navi :: Address String -> Process NoMsg ()
+navi :: Address LogMsg -> Process NoMsg ()
 navi loggerAddr = do
-  let log = send loggerAddr
+  let log string = cast loggerAddr (LogMsg string)
 
   forever do
     log "Hey, listen!"

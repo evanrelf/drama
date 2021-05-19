@@ -40,11 +40,11 @@ data CounterMsg res where
   GetCount :: CounterMsg Int
 
 
-counter :: Int -> Server CounterMsg ()
+counter :: Int -> Process CounterMsg ()
 counter count0 = do
   UseState{get, modify} <- useState count0
 
-  forever $ receive >>= handle \case
+  forever $ receive \case
     Increment n -> modify (+ n)
     Decrement n -> modify (+ negate n)
     GetCount -> get
@@ -82,11 +82,11 @@ data StateMsg s res where
   ModifyState :: (s -> s) -> StateMsg s ()
 
 
-state :: s -> Server (StateMsg s) ()
+state :: s -> Process (StateMsg s) ()
 state s0 = do
   stateIORef <- liftIO $ newIORef s0
 
-  forever $ receive >>= handle \case
+  forever $ receive \case
     GetState ->
       liftIO $ readIORef stateIORef
 
@@ -102,8 +102,8 @@ state s0 = do
 
 
 data UseState s = UseState
-  { get :: forall msg. HasMsg s => Process msg s
-  , gets :: forall a msg. HasMsg a => (s -> a) -> Process msg a
+  { get :: forall msg. Process msg s
+  , gets :: forall a msg. (s -> a) -> Process msg a
   , put :: forall msg. s -> Process msg ()
   , modify :: forall msg. (s -> s) -> Process msg ()
   }
