@@ -14,7 +14,7 @@ import System.Exit (exitSuccess)
 
 
 main :: IO ()
-main = run_ do
+main = runActor_ do
   bottles <- useCounter 99
 
   forever do
