@@ -11,17 +11,17 @@ to the [Haskell Package Versioning Policy][pvp].
 - Rename "process" to "actor" everywhere
 - Consolidate everything under `Drama` and `Drama.Internal` modules
 - Remove `Drama.Loop` module
-- Make `tryReceive` indicate whether a message was received by returning a
-  `Bool`
 - Rename `run{,_}` to `runActor{,_}`
 - Rename `here` to `getSelf`
+- Make `tryReceive` indicate whether a message was received by returning a
+  `Bool`
 - Add `Actor_` convenience type synonym
-- Send `MVar` instead of `Unagi.Chan` in `Envelope`
 - Allow using `call` with response type of `()`
 
   So that you can send synchronous/blocking messages that don't have a
   meaningful response. Useful if you need to wait until a message is handled
   before proceeding.
+- Send `MVar` instead of `Unagi.Chan` in `Envelope`
 - Loosened dependency version bounds
 
 ## [0.3.0.0] - 2021-02-23
