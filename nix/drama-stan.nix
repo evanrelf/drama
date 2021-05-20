@@ -3,7 +3,8 @@
 let
   drama = haskellPackages.drama.overrideAttrs (old: {
     outputs = (old.outputs or []) ++ [ "hie" ];
-    postBuild = (old.postBuild or "") + ''
+    postBuild = ''
+      ${old.postBuild or ""}
       cp -R .hie $hie
     '';
   });
