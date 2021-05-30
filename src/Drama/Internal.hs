@@ -20,7 +20,8 @@
 module Drama.Internal where
 
 import Control.Applicative (Alternative)
-import Control.Concurrent (MVar, newEmptyMVar, putMVar, takeMVar)
+import Control.Concurrent.MVar (MVar)
+import Control.Exception (finally)
 import Control.Monad (MonadPlus)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
@@ -28,6 +29,7 @@ import Control.Monad.Trans.Reader (ReaderT (..), asks)
 import Data.Kind (Type)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
+import qualified Control.Concurrent.MVar as MVar
 import qualified Ki
 
 -- Support `MonadFail` on GHC 8.6.5
@@ -79,7 +81,10 @@ data ActorEnv msg = ActorEnv
 -- `getSelf`, or `receive` (if another actor sends you an address).
 --
 -- @since 0.4.0.0
-newtype Address msg = Address (Unagi.InChan (Envelope msg))
+data Address msg = Address
+  { channel :: Unagi.InChan (Envelope msg)
+  , alive :: MVar ()
+  }
 
 
 -- | Mailbox where an actor receives messages. Cannot be shared with other
@@ -120,7 +125,9 @@ spawn
   -- ^ Spawned actor's address
 spawn actor = do
   (inChan, outChan) <- liftIO Unagi.newChan
-  let address = Address inChan
+  let channel = inChan
+  alive <- liftIO MVar.newEmptyMVar
+  let address = Address{channel, alive}
   let mailbox = Mailbox outChan
   spawnImpl address mailbox actor
   pure address
@@ -132,7 +139,9 @@ spawn actor = do
 -- @since 0.4.0.0
 spawn_ :: Actor_ () -> Actor msg ()
 spawn_ actor = do
-  let address = Address (error noMsgError)
+  let channel = error noMsgError
+  alive <- liftIO MVar.newEmptyMVar
+  let address = Address{channel, alive}
   let mailbox = Mailbox (error noMsgError)
   spawnImpl address mailbox actor
 
@@ -145,6 +154,13 @@ spawnImpl
 spawnImpl address mailbox actor = do
   scope <- Actor $ asks scope
   liftIO $ Ki.fork_ scope $ runActorImpl address mailbox actor
+
+
+-- | Check whether an actor is still running.
+--
+-- @since TODO
+isAlive :: Address msg -> Actor _msg Bool
+isAlive Address{alive} = liftIO $ MVar.isEmptyMVar alive
 
 
 -- | Block until all child actors have terminated.
@@ -173,7 +189,7 @@ cast
   -> msg ()
   -- ^ Message to send
   -> Actor _msg ()
-cast (Address inChan) msg = liftIO $ Unagi.writeChan inChan (Cast msg)
+cast Address{channel = inChan} msg = liftIO $ Unagi.writeChan inChan (Cast msg)
 
 
 -- | Send a message to another actor, and wait for a response.
@@ -186,10 +202,10 @@ call
   -- ^ Message to send
   -> Actor _msg res
   -- ^ Response
-call (Address inChan) msg = liftIO do
-  resMVar <- newEmptyMVar
+call Address{channel = inChan} msg = liftIO do
+  resMVar <- MVar.newEmptyMVar
   Unagi.writeChan inChan (Call resMVar msg)
-  takeMVar resMVar
+  MVar.takeMVar resMVar
 
 
 -- | Receive a message. When the mailbox is empty, blocks until a message
@@ -208,7 +224,7 @@ receive callback = do
       callback msg
     Call resMVar msg -> do
       res <- callback msg
-      liftIO $ putMVar resMVar res
+      liftIO $ MVar.putMVar resMVar res
 
 
 -- | Try to receive a message. When the mailbox is empty, returns immediately.
@@ -230,7 +246,7 @@ tryReceive callback = do
       pure True
     Just (Call resMVar msg) -> do
       res <- callback msg
-      liftIO $ putMVar resMVar res
+      liftIO $ MVar.putMVar resMVar res
       pure True
 
 
@@ -254,7 +270,9 @@ tryReceive callback = do
 runActor :: MonadIO m => Actor msg a -> m a
 runActor actor = do
   (inChan, outChan) <- liftIO Unagi.newChan
-  let address = Address inChan
+  let channel = inChan
+  alive <- liftIO MVar.newEmptyMVar
+  let address = Address{channel, alive}
   let mailbox = Mailbox outChan
   runActorImpl address mailbox actor
 
@@ -265,15 +283,18 @@ runActor actor = do
 -- @since 0.4.0.0
 runActor_ :: MonadIO m => Actor_ a -> m a
 runActor_ actor = do
-  let address = Address (error noMsgError)
+  let channel = error noMsgError
+  alive <- liftIO MVar.newEmptyMVar
+  let address = Address{channel, alive}
   let mailbox = Mailbox (error noMsgError)
   runActorImpl address mailbox actor
 
 
 runActorImpl :: MonadIO m => Address msg -> Mailbox msg -> Actor msg a -> m a
-runActorImpl address mailbox (Actor reader) =
-  liftIO $ Ki.scoped \scope ->
-    runReaderT reader ActorEnv{address, mailbox, scope}
+runActorImpl address@Address{alive} mailbox (Actor reader) =
+  liftIO $ Ki.scoped \scope -> do
+    runReaderT reader ActorEnv{address, mailbox, scope} `finally` do
+      MVar.tryPutMVar alive ()
 
 
 noMsgError :: String
