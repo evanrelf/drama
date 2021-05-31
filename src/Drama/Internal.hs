@@ -29,7 +29,7 @@ import Control.Monad (MonadPlus)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.IO.Unlift (MonadUnliftIO, UnliftIO (..), askUnliftIO)
-import Control.Monad.Reader (MonadReader (..), ReaderT (..), asks, mapReaderT)
+import Control.Monad.Reader (MonadReader (..), ReaderT (..), ask, mapReaderT)
 import Control.Monad.Trans (MonadTrans (..))
 import Control.Monad.Zip (MonadZip)
 import Data.Kind (Type)
@@ -183,7 +183,7 @@ spawnImpl
   -> ActorT _msg m ()
 spawnImpl address mailbox actor = do
   UnliftIO unliftIO <- lift askUnliftIO
-  scope <- ActorT $ asks scope
+  ActorEnv{scope} <- ActorT ask
   liftIO $ Ki.fork_ scope $ unliftIO $ runActorTImpl address mailbox actor
 
 
@@ -206,7 +206,7 @@ wait Address{alive} = liftIO $ MVar.readMVar alive
 -- @since TODO
 waitAll :: MonadIO m => ActorT msg m ()
 waitAll = do
-  scope <- ActorT $ asks scope
+  ActorEnv{scope} <- ActorT ask
   liftIO $ Ki.wait scope
 
 
@@ -214,7 +214,9 @@ waitAll = do
 --
 -- @since 0.4.0.0
 getSelf :: Monad m => ActorT msg m (Address msg)
-getSelf = ActorT $ asks address
+getSelf = do
+  ActorEnv{address} <- ActorT ask
+  pure address
 
 
 -- | Send a message to another actor, expecting no response. Returns immediately
@@ -258,7 +260,7 @@ receive
   -- ^ Callback function that responds to messages
   -> ActorT msg m ()
 receive callback = do
-  Mailbox outChan <- ActorT $ asks mailbox
+  ActorEnv{mailbox = Mailbox outChan} <- ActorT ask
   envelope <- liftIO $ Unagi.readChan outChan
   case envelope of
     Cast msg ->
@@ -277,7 +279,7 @@ tryReceive
   -- ^ Callback function that responds to messages
   -> ActorT msg m Bool
 tryReceive callback = do
-  Mailbox outChan <- ActorT $ asks mailbox
+  ActorEnv{mailbox = Mailbox outChan} <- ActorT ask
   (element, _) <- liftIO $ Unagi.tryReadChan outChan
   envelope <- liftIO $ Unagi.tryRead element
   case envelope of
