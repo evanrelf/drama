@@ -39,6 +39,7 @@
 
 module Drama
   ( Actor
+  , ActorT
 
     -- * Spawning actors
   , spawn
@@ -57,12 +58,15 @@ module Drama
 
     -- * Running your program
   , runActor
+  , runActorT
 
     -- * Not receiving messages
   , Actor_
+  , ActorT_
   , NoMsg
   , spawn_
   , runActor_
+  , runActorT_
   )
 where
 

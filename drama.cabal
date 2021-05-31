@@ -55,9 +55,10 @@ library
   import: common, hie
   hs-source-dirs: src
   build-depends:
-      ki           >= 0.2 && < 0.3
-    , transformers >= 0.5 && < 1.0
-    , unagi-chan   >= 0.4 && < 0.5
+      ki            >= 0.2     && < 0.3
+    , transformers  >= 0.5     && < 1.0
+    , unagi-chan    >= 0.4     && < 0.5
+    , unliftio-core >= 0.2.0.1 && < 0.3
   exposed-modules:
       Drama
     , Drama.Internal

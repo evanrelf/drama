@@ -25,7 +25,10 @@ import Control.Exception (finally)
 import Control.Monad (MonadPlus)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
+import Control.Monad.IO.Unlift (MonadUnliftIO (..), UnliftIO (..), askUnliftIO)
+import Control.Monad.Trans.Class (MonadTrans (..))
 import Control.Monad.Trans.Reader (ReaderT (..), asks)
+import Data.Function ((&))
 import Data.Kind (Type)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
@@ -43,20 +46,26 @@ import Prelude hiding (MonadFail)
 
 -- | Monad supporting actor operations.
 --
--- @since 0.4.0.0
-newtype Actor (msg :: Type -> Type) a = Actor (ReaderT (ActorEnv msg) IO a)
+-- @since TODO
+newtype ActorT (msg :: Type -> Type) m a = ActorT (ReaderT (ActorEnv msg) m a)
   deriving newtype
     ( Functor
     , Applicative
     , Monad
     , MonadIO
+    , MonadUnliftIO
     , Alternative
     , MonadPlus
 #if MIN_VERSION_base(4,9,0)
     , MonadFail
 #endif
     , MonadFix
+    , MonadTrans
     )
+
+
+-- @since 0.4.0.0
+type Actor msg = ActorT msg IO
 
 
 -- | Ambient context provided by the `Actor` monad.
@@ -111,6 +120,10 @@ data Envelope (msg :: Type -> Type) where
 data NoMsg res
 
 
+-- | @since TODO
+type ActorT_ = ActorT NoMsg
+
+
 -- | @since 0.4.0.0
 type Actor_ = Actor NoMsg
 
@@ -119,9 +132,10 @@ type Actor_ = Actor NoMsg
 --
 -- @since 0.4.0.0
 spawn
-  :: Actor msg ()
+  :: MonadUnliftIO m
+  => ActorT msg m ()
   -- ^ Actor to spawn
-  -> Actor _msg (Address msg)
+  -> ActorT _msg m (Address msg)
   -- ^ Spawned actor's address
 spawn actor = do
   (inChan, outChan) <- liftIO Unagi.newChan
@@ -137,7 +151,7 @@ spawn actor = do
 -- (@msg ~ `NoMsg`@). See docs for `spawn` for more information.
 --
 -- @since 0.4.0.0
-spawn_ :: Actor_ () -> Actor msg ()
+spawn_ :: MonadUnliftIO m => ActorT_ m () -> ActorT msg m ()
 spawn_ actor = do
   let channel = error noMsgError
   alive <- liftIO MVar.newEmptyMVar
@@ -147,36 +161,38 @@ spawn_ actor = do
 
 
 spawnImpl
-  :: Address msg
+  :: MonadUnliftIO m
+  => Address msg
   -> Mailbox msg
-  -> Actor msg ()
-  -> Actor _msg ()
+  -> ActorT msg m ()
+  -> ActorT _msg m ()
 spawnImpl address mailbox actor = do
-  scope <- Actor $ asks scope
-  liftIO $ Ki.fork_ scope $ runActorImpl address mailbox actor
+  UnliftIO unliftIO <- lift askUnliftIO
+  scope <- ActorT $ asks scope
+  liftIO $ Ki.fork_ scope $ unliftIO $ runActorTImpl address mailbox actor
 
 
 -- | Check whether an actor is still running.
 --
 -- @since TODO
-isAlive :: Address msg -> Actor _msg Bool
+isAlive :: MonadIO m => Address msg -> ActorT _msg m Bool
 isAlive Address{alive} = liftIO $ MVar.isEmptyMVar alive
 
 
 -- | Block until all child actors have terminated.
 --
 -- @since 0.4.0.0
-wait :: Actor msg ()
+wait :: MonadIO m => ActorT msg m ()
 wait = do
-  scope <- Actor $ asks scope
+  scope <- ActorT $ asks scope
   liftIO $ Ki.wait scope
 
 
 -- | Return the current actor's address.
 --
 -- @since 0.4.0.0
-getSelf :: Actor msg (Address msg)
-getSelf = Actor $ asks address
+getSelf :: Monad m => ActorT msg m (Address msg)
+getSelf = ActorT $ asks address
 
 
 -- | Send a message to another actor, expecting no response. Returns immediately
@@ -184,11 +200,12 @@ getSelf = Actor $ asks address
 --
 -- @since 0.4.0.0
 cast
-  :: Address msg
+  :: MonadIO m
+  => Address msg
   -- ^ Actor's address
   -> msg ()
   -- ^ Message to send
-  -> Actor _msg ()
+  -> ActorT _msg m ()
 cast Address{channel = inChan} msg = liftIO $ Unagi.writeChan inChan (Cast msg)
 
 
@@ -196,11 +213,12 @@ cast Address{channel = inChan} msg = liftIO $ Unagi.writeChan inChan (Cast msg)
 --
 -- @since 0.4.0.0
 call
-  :: Address msg
+  :: MonadIO m
+  => Address msg
   -- ^ Actor's address
   -> msg res
   -- ^ Message to send
-  -> Actor _msg res
+  -> ActorT _msg m res
   -- ^ Response
 call Address{channel = inChan} msg = liftIO do
   resMVar <- MVar.newEmptyMVar
@@ -213,11 +231,12 @@ call Address{channel = inChan} msg = liftIO do
 --
 -- @since 0.4.0.0
 receive
-  :: (forall res. msg res -> Actor msg res)
+  :: MonadIO m
+  => (forall res. msg res -> ActorT msg m res)
   -- ^ Callback function that responds to messages
-  -> Actor msg ()
+  -> ActorT msg m ()
 receive callback = do
-  Mailbox outChan <- Actor $ asks mailbox
+  Mailbox outChan <- ActorT $ asks mailbox
   envelope <- liftIO $ Unagi.readChan outChan
   case envelope of
     Cast msg ->
@@ -231,11 +250,12 @@ receive callback = do
 --
 -- @since 0.4.0.0
 tryReceive
-  :: (forall res. msg res -> Actor msg res)
+  :: MonadIO m
+  => (forall res. msg res -> ActorT msg m res)
   -- ^ Callback function that responds to messages
-  -> Actor msg Bool
+  -> ActorT msg m Bool
 tryReceive callback = do
-  Mailbox outChan <- Actor $ asks mailbox
+  Mailbox outChan <- ActorT $ asks mailbox
   (element, _) <- liftIO $ Unagi.tryReadChan outChan
   envelope <- liftIO $ Unagi.tryRead element
   case envelope of
@@ -253,48 +273,53 @@ tryReceive callback = do
 -- | Run a top-level actor. Intended to be used at the entry point of your
 -- program.
 --
--- If your program is designed with actors in mind, you can use `Actor` as
--- your program's base monad:
---
--- > main :: IO ()
--- > main = runActor root
--- >
--- > root :: Actor RootMsg ()
--- > root = do
--- >   ...
---
--- Otherwise, use `runActor` like you would with @run@ functions from libraries
--- like @transformers@ or @mtl@.
---
--- @since 0.4.0.0
-runActor :: MonadIO m => Actor msg a -> m a
-runActor actor = do
+-- @since TODO
+runActorT :: MonadUnliftIO m => ActorT msg m a -> m a
+runActorT actor = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let channel = inChan
   alive <- liftIO MVar.newEmptyMVar
   let address = Address{channel, alive}
   let mailbox = Mailbox outChan
-  runActorImpl address mailbox actor
+  runActorTImpl address mailbox actor
 
 
--- | More efficient version of `runActor`, for actors which receive no messages
--- (@msg ~ `NoMsg`@). See docs for `runActor` for more information.
+-- | More efficient version of `runActorT`, for actors which receive no messages
+-- (@msg ~ `NoMsg`@). See docs for `runActorT` for more information.
 --
--- @since 0.4.0.0
-runActor_ :: MonadIO m => Actor_ a -> m a
-runActor_ actor = do
+-- @since TODO
+runActorT_ :: MonadUnliftIO m => ActorT msg m a -> m a
+runActorT_ actor = do
   let channel = error noMsgError
   alive <- liftIO MVar.newEmptyMVar
   let address = Address{channel, alive}
   let mailbox = Mailbox (error noMsgError)
-  runActorImpl address mailbox actor
+  runActorTImpl address mailbox actor
 
 
-runActorImpl :: MonadIO m => Address msg -> Mailbox msg -> Actor msg a -> m a
-runActorImpl address@Address{alive} mailbox (Actor reader) =
+-- @since 0.4.0.0
+runActor :: MonadIO m => Actor msg a -> m a
+runActor = liftIO . runActorT
+
+
+-- @since 0.4.0.0
+runActor_ :: MonadIO m => Actor_ a -> m a
+runActor_ = liftIO . runActorT_
+
+
+runActorTImpl
+  :: MonadUnliftIO m
+  => Address msg
+  -> Mailbox msg
+  -> ActorT msg m a
+  -> m a
+runActorTImpl address@Address{alive} mailbox (ActorT reader) = do
+  UnliftIO unliftIO <- askUnliftIO
   liftIO $ Ki.scoped \scope -> do
-    runReaderT reader ActorEnv{address, mailbox, scope} `finally` do
-      MVar.tryPutMVar alive ()
+    reader
+      & flip runReaderT ActorEnv{address, mailbox, scope}
+      & unliftIO
+      & flip finally (MVar.tryPutMVar alive ())
 
 
 noMsgError :: String
