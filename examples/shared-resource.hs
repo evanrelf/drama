@@ -25,7 +25,7 @@ main = runActor_ do
   spawn_ (navi loggerAddr)
 
   -- Block `main` thread forever.
-  wait
+  waitAll
 
 
 -- | Message type for `logger`

@@ -194,11 +194,18 @@ isAlive :: MonadIO m => Address msg -> ActorT _msg m Bool
 isAlive Address{alive} = liftIO $ MVar.isEmptyMVar alive
 
 
+-- | Block until child actor has terminated.
+--
+-- @since TODO
+wait :: MonadIO m => Address msg -> ActorT _msg m ()
+wait Address{alive} = liftIO $ MVar.readMVar alive
+
+
 -- | Block until all child actors have terminated.
 --
--- @since 0.4.0.0
-wait :: MonadIO m => ActorT msg m ()
-wait = do
+-- @since TODO
+waitAll :: MonadIO m => ActorT msg m ()
+waitAll = do
   scope <- ActorT $ asks scope
   liftIO $ Ki.wait scope
 

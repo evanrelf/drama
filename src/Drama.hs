@@ -45,6 +45,7 @@ module Drama
   , spawn
   , isAlive
   , wait
+  , waitAll
 
     -- * Sending messages
   , Address
