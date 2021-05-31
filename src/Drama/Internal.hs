@@ -32,7 +32,6 @@ import Control.Monad.IO.Unlift (MonadUnliftIO, UnliftIO (..), askUnliftIO)
 import Control.Monad.Reader (MonadReader (..), ReaderT (..), asks, mapReaderT)
 import Control.Monad.Trans (MonadTrans (..))
 import Control.Monad.Zip (MonadZip)
-import Data.Function ((&))
 import Data.Kind (Type)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
@@ -331,12 +330,9 @@ runActorTImpl
   -> m a
 runActorTImpl address@Address{alive} mailbox actor = do
   UnliftIO unliftIO <- askUnliftIO
-  liftIO $ Ki.scoped \scope -> do
-    actor
-      & unActorT
-      & flip runReaderT ActorEnv{address, mailbox, scope}
-      & unliftIO
-      & flip finally (MVar.tryPutMVar alive ())
+  liftIO $ Ki.scoped \scope ->
+    (unliftIO $ runReaderT (unActorT actor) ActorEnv{address, mailbox, scope})
+      `finally` (MVar.tryPutMVar alive ())
 
 
 noMsgError :: String
