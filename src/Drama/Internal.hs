@@ -1,11 +1,14 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 {-# OPTIONS_HADDOCK not-home #-}
 {-# OPTIONS_HADDOCK prune #-}
@@ -25,9 +28,10 @@ import Control.Exception (finally)
 import Control.Monad (MonadPlus)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
-import Control.Monad.IO.Unlift (MonadUnliftIO (..), UnliftIO (..), askUnliftIO)
-import Control.Monad.Trans.Class (MonadTrans (..))
-import Control.Monad.Trans.Reader (ReaderT (..), asks)
+import Control.Monad.IO.Unlift (MonadUnliftIO, UnliftIO (..), askUnliftIO)
+import Control.Monad.Reader (MonadReader (..), ReaderT (..), asks, mapReaderT)
+import Control.Monad.Trans (MonadTrans (..))
+import Control.Monad.Zip (MonadZip)
 import Data.Function ((&))
 import Data.Kind (Type)
 
@@ -47,7 +51,8 @@ import Prelude hiding (MonadFail)
 -- | Monad supporting actor operations.
 --
 -- @since TODO
-newtype ActorT (msg :: Type -> Type) m a = ActorT (ReaderT (ActorEnv msg) m a)
+newtype ActorT (msg :: Type -> Type) m a
+  = ActorT { unActorT :: ReaderT (ActorEnv msg) m a }
   deriving newtype
     ( Functor
     , Applicative
@@ -60,8 +65,19 @@ newtype ActorT (msg :: Type -> Type) m a = ActorT (ReaderT (ActorEnv msg) m a)
     , MonadFail
 #endif
     , MonadFix
+    , MonadZip
     , MonadTrans
     )
+
+
+mapActorT :: (m a -> n b) -> ActorT msg m a -> ActorT msg n b
+mapActorT f = ActorT . mapReaderT f . unActorT
+
+
+instance MonadReader r m => MonadReader r (ActorT msg m) where
+  ask = lift ask
+  reader = lift . reader
+  local = mapActorT . local
 
 
 -- @since 0.4.0.0
@@ -313,10 +329,11 @@ runActorTImpl
   -> Mailbox msg
   -> ActorT msg m a
   -> m a
-runActorTImpl address@Address{alive} mailbox (ActorT reader) = do
+runActorTImpl address@Address{alive} mailbox actor = do
   UnliftIO unliftIO <- askUnliftIO
   liftIO $ Ki.scoped \scope -> do
-    reader
+    actor
+      & unActorT
       & flip runReaderT ActorEnv{address, mailbox, scope}
       & unliftIO
       & flip finally (MVar.tryPutMVar alive ())
