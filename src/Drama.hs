@@ -42,7 +42,6 @@ module Drama
 
     -- * Spawning actors
   , spawn
-  , wait
 
     -- * Sending messages
   , Address

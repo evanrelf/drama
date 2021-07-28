@@ -21,16 +21,16 @@ module Drama.Internal where
 
 import Control.Applicative (Alternative)
 import Control.Concurrent (MVar, newEmptyMVar, putMVar, takeMVar)
-import Control.Monad (MonadPlus)
+import Control.Concurrent.Async (async, cancel)
+import Control.Monad (MonadPlus, void)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
-import Control.Monad.Trans.Reader (ReaderT (..), asks)
-import Control.Monad.Trans.Resource (MonadResource, ResourceT, runResourceT)
 import Control.Monad.IO.Unlift (MonadUnliftIO)
+import Control.Monad.Trans.Reader (ReaderT (..), asks)
+import Control.Monad.Trans.Resource (MonadResource, ResourceT, allocate, runResourceT)
 import Data.Kind (Type)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
-import qualified Ki
 
 -- Support `MonadFail` on GHC 8.6.5
 #if MIN_VERSION_base(4,9,0)
@@ -74,9 +74,6 @@ data ActorEnv msg = ActorEnv
     -- ^ Current actor's address.
   , mailbox :: Mailbox msg
     -- ^ Current actor's mailbox.
-  , scope :: Ki.Scope
-    -- ^ Current actor's token used for spawning threads. Delimits the lifetime
-    -- of child actors (threads).
   }
 
 
@@ -148,17 +145,7 @@ spawnImpl
   -> Actor msg ()
   -> Actor _msg ()
 spawnImpl address mailbox actor = do
-  scope <- Actor $ asks scope
-  liftIO $ Ki.fork_ scope $ runActorImpl address mailbox actor
-
-
--- | Block until all child actors have terminated.
---
--- @since 0.4.0.0
-wait :: Actor msg ()
-wait = do
-  scope <- Actor $ asks scope
-  liftIO $ Ki.wait scope
+  void $ allocate (async $ runActorImpl address mailbox actor) cancel
 
 
 -- | Return the current actor's address.
@@ -277,8 +264,7 @@ runActor_ actor = do
 
 runActorImpl :: MonadIO m => Address msg -> Mailbox msg -> Actor msg a -> m a
 runActorImpl address mailbox (Actor reader) =
-  liftIO $ Ki.scoped \scope ->
-    runResourceT $ runReaderT reader ActorEnv{address, mailbox, scope}
+  liftIO $ runResourceT $ runReaderT reader ActorEnv{address, mailbox}
 
 
 noMsgError :: String

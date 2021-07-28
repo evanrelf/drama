@@ -55,14 +55,14 @@ library
   import: common, hie
   hs-source-dirs: src
   build-depends:
-      ki           >= 0.2 && < 0.3
-    , resourcet    >= 1.2 && < 1.3
-    , transformers >= 0.5 && < 1.0
-    , unagi-chan   >= 0.4 && < 0.5
+    , async         >= 2.0 && < 3.0
+    , resourcet     >= 1.2 && < 1.3
+    , transformers  >= 0.5 && < 1.0
+    , unagi-chan    >= 0.4 && < 0.5
     , unliftio-core
   exposed-modules:
-      Drama
-    , Drama.Internal
+    Drama
+    Drama.Internal
 
 
 executable example-shared-resource
