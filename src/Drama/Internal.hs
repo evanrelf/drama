@@ -25,6 +25,7 @@ import Control.Monad (MonadPlus)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Reader (ReaderT (..), asks)
+import Control.Monad.Trans.Resource (MonadResource, ResourceT, runResourceT)
 import Data.Kind (Type)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
@@ -42,12 +43,14 @@ import Prelude hiding (MonadFail)
 -- | Monad supporting actor operations.
 --
 -- @since 0.4.0.0
-newtype Actor (msg :: Type -> Type) a = Actor (ReaderT (ActorEnv msg) IO a)
+newtype Actor (msg :: Type -> Type) a
+  = Actor (ReaderT (ActorEnv msg) (ResourceT IO) a)
   deriving newtype
     ( Functor
     , Applicative
     , Monad
     , MonadIO
+    , MonadResource
     , Alternative
     , MonadPlus
 #if MIN_VERSION_base(4,9,0)
@@ -273,7 +276,7 @@ runActor_ actor = do
 runActorImpl :: MonadIO m => Address msg -> Mailbox msg -> Actor msg a -> m a
 runActorImpl address mailbox (Actor reader) =
   liftIO $ Ki.scoped \scope ->
-    runReaderT reader ActorEnv{address, mailbox, scope}
+    runResourceT $ runReaderT reader ActorEnv{address, mailbox, scope}
 
 
 noMsgError :: String
