@@ -26,6 +26,7 @@ import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Reader (ReaderT (..), asks)
 import Control.Monad.Trans.Resource (MonadResource, ResourceT, runResourceT)
+import Control.Monad.IO.Unlift (MonadUnliftIO)
 import Data.Kind (Type)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
@@ -50,6 +51,7 @@ newtype Actor (msg :: Type -> Type) a
     , Applicative
     , Monad
     , MonadIO
+    , MonadUnliftIO
     , MonadResource
     , Alternative
     , MonadPlus
