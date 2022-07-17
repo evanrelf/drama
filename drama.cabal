@@ -50,7 +50,7 @@ library
   build-depends:
     , ki           >= 1.0 && < 2.0
     , stm
-    , transformers >= 0.5 && < 1.0
+    , transformers
     , unagi-chan   >= 0.4 && < 0.5
   exposed-modules:
       Drama
