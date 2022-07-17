@@ -40,6 +40,7 @@
 module Drama
   ( Actor
   , ActorT
+  , MonadActor
 
     -- * Spawning actors
   , spawn

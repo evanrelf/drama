@@ -8,6 +8,7 @@ to the [Haskell Package Versioning Policy][pvp].
 ## [0.6.0.0] - Unreleased
 
 - Add `ActorT` monad transformer and `ActorT_` type alias
+- Add `MonadActor` type class
 - Add `runActorT` and `runActorT_` functions
 - Add `mapActorT` function
 

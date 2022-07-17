@@ -2,6 +2,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures #-}
@@ -74,6 +75,23 @@ newtype ActorT (msg :: Type -> Type) m a = ActorT (ReaderT (ActorEnv msg) m a)
 #endif
     , MonadFix
     )
+
+
+-- | Type class for monads supporting actor operations.
+--
+-- @since 0.6.0.0
+class Monad m => MonadActor msg m | m -> msg where
+  askActorEnv :: m (ActorEnv msg)
+
+
+-- | @since 0.6.0.0
+instance Monad m => MonadActor msg (ActorT msg m) where
+  askActorEnv = ActorT ask
+
+
+-- | @since 0.6.0.0
+instance MonadActor msg m => MonadActor msg (ReaderT r m) where
+  askActorEnv = lift askActorEnv
 
 
 -- | Transform the computation inside an `ActorT`.
@@ -188,17 +206,19 @@ spawnImpl address mailbox actor = do
 -- | Block until all child actors have terminated.
 --
 -- @since 0.4.0.0
-wait :: MonadIO m => ActorT msg m ()
+wait :: (MonadActor msg m, MonadIO m) => m ()
 wait = do
-  scope <- ActorT $ asks scope
+  ActorEnv{scope} <- askActorEnv
   liftIO $ STM.atomically $ Ki.awaitAll scope
 
 
 -- | Return the current actor's address.
 --
 -- @since 0.4.0.0
-getSelf :: Monad m => ActorT msg m (Address msg)
-getSelf = ActorT $ asks address
+getSelf :: MonadActor msg m => m (Address msg)
+getSelf = do
+  ActorEnv{address} <- askActorEnv
+  pure address
 
 
 -- | Send a message to another actor, expecting no response. Returns immediately
@@ -211,7 +231,7 @@ cast
   -- ^ Actor's address
   -> msg ()
   -- ^ Message to send
-  -> ActorT _msg m ()
+  -> m ()
 cast (Address inChan) msg = liftIO $ Unagi.writeChan inChan (Cast msg)
 
 
@@ -224,7 +244,7 @@ call
   -- ^ Actor's address
   -> msg res
   -- ^ Message to send
-  -> ActorT _msg m res
+  -> m res
   -- ^ Response
 call (Address inChan) msg = liftIO do
   resMVar <- newEmptyMVar
@@ -237,12 +257,12 @@ call (Address inChan) msg = liftIO do
 --
 -- @since 0.4.0.0
 receive
-  :: MonadIO m
-  => (forall res. msg res -> ActorT msg m res)
+  :: (MonadActor msg m, MonadIO m)
+  => (forall res. msg res -> m res)
   -- ^ Callback function that responds to messages
-  -> ActorT msg m ()
+  -> m ()
 receive callback = do
-  Mailbox outChan <- ActorT $ asks mailbox
+  ActorEnv{mailbox = Mailbox outChan} <- askActorEnv
   envelope <- liftIO $ Unagi.readChan outChan
   case envelope of
     Cast msg ->
@@ -256,12 +276,12 @@ receive callback = do
 --
 -- @since 0.4.0.0
 tryReceive
-  :: MonadIO m
-  => (forall res. msg res -> ActorT msg m res)
+  :: (MonadActor msg m, MonadIO m)
+  => (forall res. msg res -> m res)
   -- ^ Callback function that responds to messages
-  -> ActorT msg m Bool
+  -> m Bool
 tryReceive callback = do
-  Mailbox outChan <- ActorT $ asks mailbox
+  ActorEnv{mailbox = Mailbox outChan} <- askActorEnv
   (element, _) <- liftIO $ Unagi.tryReadChan outChan
   envelope <- liftIO $ Unagi.tryRead element
   case envelope of
