@@ -119,6 +119,3 @@ useState s0 = do
     , put = \s -> cast stateAddr (PutState s)
     , modify = \f -> cast stateAddr (ModifyState f)
     }
-
-
-{- HLINT ignore "Avoid lambda" -}
