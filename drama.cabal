@@ -9,7 +9,7 @@ author:      Evan Relf <evan@evanrelf.com>
 maintainer:  Evan Relf <evan@evanrelf.com>
 homepage:    https://github.com/evanrelf/drama
 license:     BSD-3-Clause
-copyright:   2021 Evan Relf
+copyright:   2022 Evan Relf
 tested-with: GHC == 8.6.5, GHC == 8.8.4, GHC == 8.10.3
 
 license-file: LICENSE
