@@ -7,7 +7,7 @@
 --
 -- Actor library for Haskell
 --
--- ===== __Example__
+-- ===== Example
 --
 -- An actor which encapsulates a piece of mutable state. Its @StateMsg@ type
 -- specifies which messages it accepts, which messages return a response, and
