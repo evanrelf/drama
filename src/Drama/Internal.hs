@@ -157,7 +157,7 @@ spawnImpl
   -> Actor _msg ()
 spawnImpl address mailbox actor = do
   scope <- ActorT $ asks scope
-  void $ liftIO $ Ki.fork scope $ runActorImpl address mailbox actor
+  void $ liftIO $ Ki.fork scope $ runActorTImpl address mailbox actor
 
 
 -- | Block until all child actors have terminated.
@@ -247,6 +247,20 @@ tryReceive callback = do
       pure True
 
 
+-- | See docs for `runActorT` for more information.
+--
+-- @since 0.4.0.0
+runActor :: MonadIO m => Actor msg a -> m a
+runActor actor = liftIO $ runActorT actor
+
+
+-- | See docs for `runActorT_` for more information.
+--
+-- @since 0.4.0.0
+runActor_ :: MonadIO m => Actor_ a -> m a
+runActor_ actor = liftIO $ runActorT_ actor
+
+
 -- | Run a top-level actor. Intended to be used at the entry point of your
 -- program.
 --
@@ -254,39 +268,43 @@ tryReceive callback = do
 -- your program's base monad:
 --
 -- > main :: IO ()
--- > main = runActor root
+-- > main = runActorT root
 -- >
 -- > root :: Actor RootMsg ()
 -- > root = do
 -- >   ...
 --
--- Otherwise, use `runActor` like you would with @run@ functions from libraries
+-- Otherwise, use `runActorT` like you would with @run@ functions from libraries
 -- like @transformers@ or @mtl@.
 --
--- @since 0.4.0.0
-runActor :: MonadIO m => Actor msg a -> m a
-runActor actor = do
+-- @since 0.6.0.0
+runActorT :: MonadUnliftIO m => ActorT msg m a -> m a
+runActorT actor = do
   (inChan, outChan) <- liftIO Unagi.newChan
   let address = Address inChan
   let mailbox = Mailbox outChan
-  runActorImpl address mailbox actor
+  runActorTImpl address mailbox actor
 
 
--- | More efficient version of `runActor`, for actors which receive no messages
--- (@msg ~ `NoMsg`@). See docs for `runActor` for more information.
+-- | More efficient version of `runActorT`, for actors which receive no messages
+-- (@msg ~ `NoMsg`@). See docs for `runActorT` for more information.
 --
--- @since 0.4.0.0
-runActor_ :: MonadIO m => Actor_ a -> m a
-runActor_ actor = do
+-- @since 0.6.0.0
+runActorT_ :: MonadUnliftIO m => ActorT_ m a -> m a
+runActorT_ actor = do
   let address = Address (error noMsgError)
   let mailbox = Mailbox (error noMsgError)
-  runActorImpl address mailbox actor
+  runActorTImpl address mailbox actor
 
 
-runActorImpl :: MonadIO m => Address msg -> Mailbox msg -> Actor msg a -> m a
-runActorImpl address mailbox (ActorT reader) =
-  liftIO $ Ki.scoped \scope ->
-    runReaderT reader ActorEnv{address, mailbox, scope}
+runActorTImpl
+  :: MonadUnliftIO m
+  => Address msg
+  -> Mailbox msg
+  -> ActorT msg m a
+  -> m a
+runActorTImpl address mailbox (ActorT reader) =
+  Ki.scoped \scope -> runReaderT reader ActorEnv{address, mailbox, scope}
 
 
 noMsgError :: String

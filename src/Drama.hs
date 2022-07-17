@@ -57,12 +57,14 @@ module Drama
 
     -- * Running your program
   , runActor
+  , runActorT
 
     -- * Not receiving messages
   , Actor_
   , NoMsg
   , spawn_
   , runActor_
+  , runActorT_
   )
 where
 
