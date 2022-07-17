@@ -23,6 +23,7 @@
                   extensions = [
                     (haskell-overlay.sources (_: _: {
                       ki = "1.0.0";
+                      ki-unlifted = "1.0.0";
                     }))
                   ];
                 }

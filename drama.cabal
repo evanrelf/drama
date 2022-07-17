@@ -48,10 +48,11 @@ library
   import: common
   hs-source-dirs: src
   build-depends:
-    , ki           >= 1.0 && < 2.0
+    , ki-unlifted   >= 1.0 && < 2.0
     , stm
     , transformers
-    , unagi-chan   >= 0.4 && < 0.5
+    , unagi-chan    >= 0.4 && < 0.5
+    , unliftio-core
   exposed-modules:
     Drama
     Drama.Internal

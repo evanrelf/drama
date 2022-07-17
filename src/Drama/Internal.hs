@@ -24,12 +24,13 @@ import Control.Concurrent (MVar, newEmptyMVar, putMVar, takeMVar)
 import Control.Monad (MonadPlus, void)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
+import Control.Monad.IO.Unlift (MonadUnliftIO)
 import Control.Monad.Trans.Reader (ReaderT (..), asks)
 import Data.Kind (Type)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
 import qualified Control.Concurrent.STM as STM
-import qualified Ki
+import qualified Ki.Unlifted as Ki
 
 -- Support `MonadFail` on GHC 8.6.5
 #if MIN_VERSION_base(4,9,0)
@@ -49,6 +50,7 @@ newtype Actor (msg :: Type -> Type) a = Actor (ReaderT (ActorEnv msg) IO a)
     , Applicative
     , Monad
     , MonadIO
+    , MonadUnliftIO -- ^ @since 0.5.0.0
     , Alternative
     , MonadPlus
 #if MIN_VERSION_base(4,9,0)

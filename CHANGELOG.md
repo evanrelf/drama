@@ -8,6 +8,7 @@ to the [Haskell Package Versioning Policy][pvp].
 ## [0.5.0.0] - Unreleased
 
 - Update to `ki-unlifted` 1.0.0
+- Add `MonadUnliftIO` instance for `Actor` monad
 
 ## [0.4.0.0] - 2021-05-19
 
