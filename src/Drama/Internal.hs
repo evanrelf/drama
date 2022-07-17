@@ -56,6 +56,7 @@ newtype ActorT (msg :: Type -> Type) m a = ActorT (ReaderT (ActorEnv msg) m a)
     ( Functor
     , Applicative
     , Monad
+    , MonadTrans
     , MonadIO
     , MonadUnliftIO -- ^ @since 0.5.0.0
     , Alternative
@@ -160,7 +161,7 @@ spawnImpl
   -> ActorT _msg m ()
 spawnImpl address mailbox actor = do
   scope <- ActorT $ asks scope
-  void $ Ki.fork scope $ ActorT $ lift $ runActorTImpl address mailbox actor
+  void $ Ki.fork scope $ lift $ runActorTImpl address mailbox actor
 
 
 -- | Block until all child actors have terminated.
