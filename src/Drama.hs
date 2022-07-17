@@ -58,6 +58,7 @@ module Drama
     -- * Running your program
   , runActor
   , runActorT
+  , mapActorT
 
     -- * Not receiving messages
   , Actor_

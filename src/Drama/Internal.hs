@@ -25,7 +25,7 @@ import Control.Monad (MonadPlus, void)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.IO.Unlift (MonadUnliftIO)
-import Control.Monad.Reader (ReaderT (..), asks)
+import Control.Monad.Reader (ReaderT (..), asks, mapReaderT)
 import Control.Monad.Trans (MonadTrans (..))
 import Data.Kind (Type)
 
@@ -66,6 +66,13 @@ newtype ActorT (msg :: Type -> Type) m a = ActorT (ReaderT (ActorEnv msg) m a)
 #endif
     , MonadFix
     )
+
+
+-- | Transform the computation inside an `ActorT`.
+--
+-- @since 0.6.0.0
+mapActorT :: (m a -> n b) -> ActorT msg m a -> ActorT msg n b
+mapActorT f (ActorT reader) = ActorT $ mapReaderT f reader
 
 
 -- | Ambient context provided by the `ActorT` monad transformer.
