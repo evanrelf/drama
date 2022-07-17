@@ -7,6 +7,8 @@ to the [Haskell Package Versioning Policy][pvp].
 
 ## [0.6.0.0] - Unreleased
 
+- Add `ActorT` monad transformer and `ActorT_` type alias
+
 ## [0.5.0.0] - 2022-07-16
 
 - Update to `ki-unlifted` 1.0.0

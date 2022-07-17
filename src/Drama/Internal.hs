@@ -44,7 +44,13 @@ import Prelude hiding (MonadFail)
 -- | Monad supporting actor operations.
 --
 -- @since 0.4.0.0
-newtype Actor (msg :: Type -> Type) a = Actor (ReaderT (ActorEnv msg) IO a)
+type Actor msg = ActorT msg IO
+
+
+-- | Monad transformer supporting actor operations.
+--
+-- @since 0.6.0.0
+newtype ActorT (msg :: Type -> Type) m a = ActorT (ReaderT (ActorEnv msg) m a)
   deriving newtype
     ( Functor
     , Applicative
@@ -60,7 +66,7 @@ newtype Actor (msg :: Type -> Type) a = Actor (ReaderT (ActorEnv msg) IO a)
     )
 
 
--- | Ambient context provided by the `Actor` monad.
+-- | Ambient context provided by the `ActorT` monad transformer.
 --
 -- Values in `ActorEnv` are scoped to the current actor and cannot be safely
 -- shared. Functions like `spawn`, `receive`, and `getSelf` use these values as
@@ -113,6 +119,10 @@ data NoMsg res
 type Actor_ = Actor NoMsg
 
 
+-- | @since 0.6.0.0
+type ActorT_ = ActorT NoMsg
+
+
 -- | Spawn a child actor and return its address.
 --
 -- @since 0.4.0.0
@@ -146,7 +156,7 @@ spawnImpl
   -> Actor msg ()
   -> Actor _msg ()
 spawnImpl address mailbox actor = do
-  scope <- Actor $ asks scope
+  scope <- ActorT $ asks scope
   void $ liftIO $ Ki.fork scope $ runActorImpl address mailbox actor
 
 
@@ -155,7 +165,7 @@ spawnImpl address mailbox actor = do
 -- @since 0.4.0.0
 wait :: Actor msg ()
 wait = do
-  scope <- Actor $ asks scope
+  scope <- ActorT $ asks scope
   liftIO $ STM.atomically $ Ki.awaitAll scope
 
 
@@ -163,7 +173,7 @@ wait = do
 --
 -- @since 0.4.0.0
 getSelf :: Actor msg (Address msg)
-getSelf = Actor $ asks address
+getSelf = ActorT $ asks address
 
 
 -- | Send a message to another actor, expecting no response. Returns immediately
@@ -204,7 +214,7 @@ receive
   -- ^ Callback function that responds to messages
   -> Actor msg ()
 receive callback = do
-  Mailbox outChan <- Actor $ asks mailbox
+  Mailbox outChan <- ActorT $ asks mailbox
   envelope <- liftIO $ Unagi.readChan outChan
   case envelope of
     Cast msg ->
@@ -222,7 +232,7 @@ tryReceive
   -- ^ Callback function that responds to messages
   -> Actor msg Bool
 tryReceive callback = do
-  Mailbox outChan <- Actor $ asks mailbox
+  Mailbox outChan <- ActorT $ asks mailbox
   (element, _) <- liftIO $ Unagi.tryReadChan outChan
   envelope <- liftIO $ Unagi.tryRead element
   case envelope of
@@ -274,7 +284,7 @@ runActor_ actor = do
 
 
 runActorImpl :: MonadIO m => Address msg -> Mailbox msg -> Actor msg a -> m a
-runActorImpl address mailbox (Actor reader) =
+runActorImpl address mailbox (ActorT reader) =
   liftIO $ Ki.scoped \scope ->
     runReaderT reader ActorEnv{address, mailbox, scope}
 

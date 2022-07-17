@@ -39,6 +39,7 @@
 
 module Drama
   ( Actor
+  , ActorT
 
     -- * Spawning actors
   , spawn
