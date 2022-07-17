@@ -2,17 +2,9 @@
 , ghcVersion ? null
 }:
 
-pkgs.haskellPackages.shellFor {
-  packages = p: [
-    (pkgs.haskell.lib.doBenchmark p.drama)
-  ];
-
-  buildInputs = [
+pkgs.haskellPackages.drama.env.overrideAttrs (prev: {
+  buildInputs = (prev.buildInputs or [ ]) ++ [
     pkgs.cabal-install
     pkgs.ghcid
   ];
-
-  doBenchmark = true;
-
-  withHoogle = true;
-}
+})
