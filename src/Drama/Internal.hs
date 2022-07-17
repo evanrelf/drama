@@ -52,14 +52,10 @@ import Prelude hiding (MonadFail)
 
 
 -- | Monad supporting actor operations.
---
--- @since 0.4.0.0
 type Actor msg = ActorT msg IO
 
 
 -- | Monad transformer supporting actor operations.
---
--- @since 0.6.0.0
 newtype ActorT (msg :: Type -> Type) m a = ActorT (ReaderT (ActorEnv msg) m a)
   deriving newtype
     ( Functor
@@ -67,7 +63,7 @@ newtype ActorT (msg :: Type -> Type) m a = ActorT (ReaderT (ActorEnv msg) m a)
     , Monad
     , MonadTrans
     , MonadIO
-    , MonadUnliftIO -- ^ @since 0.5.0.0
+    , MonadUnliftIO
     , Alternative
     , MonadPlus
 #if MIN_VERSION_base(4,9,0)
@@ -78,30 +74,23 @@ newtype ActorT (msg :: Type -> Type) m a = ActorT (ReaderT (ActorEnv msg) m a)
 
 
 -- | Type class for monads supporting actor operations.
---
--- @since 0.6.0.0
 class Monad m => MonadActor msg m | m -> msg where
   askActorEnv :: m (ActorEnv msg)
 
 
--- | @since 0.6.0.0
 instance Monad m => MonadActor msg (ActorT msg m) where
   askActorEnv = ActorT ask
 
 
--- | @since 0.6.0.0
 instance MonadActor msg m => MonadActor msg (ReaderT r m) where
   askActorEnv = lift askActorEnv
 
 
 -- | Transform the computation inside an `ActorT`.
---
--- @since 0.6.0.0
 mapActorT :: (m a -> n b) -> ActorT msg m a -> ActorT msg n b
 mapActorT f (ActorT reader) = ActorT $ mapReaderT f reader
 
 
--- | @since 0.6.0.0
 instance MonadReader r m => MonadReader r (ActorT msg m) where
   ask = lift ask
   local = mapActorT . local
@@ -112,8 +101,6 @@ instance MonadReader r m => MonadReader r (ActorT msg m) where
 -- Values in `ActorEnv` are scoped to the current actor and cannot be safely
 -- shared. Functions like `spawn`, `receive`, and `getSelf` use these values as
 -- implicit parameters to avoid leaking internals (and for convenience).
---
--- @since 0.4.0.0
 data ActorEnv msg = ActorEnv
   { address :: Address msg
     -- ^ Current actor's address.
@@ -127,15 +114,11 @@ data ActorEnv msg = ActorEnv
 
 -- | Address for sending messages to an actor. Obtained by running `spawn`,
 -- `getSelf`, or `receive` (if another actor sends you an address).
---
--- @since 0.4.0.0
 newtype Address msg = Address (Unagi.InChan (Envelope msg))
 
 
 -- | Mailbox where an actor receives messages. Cannot be shared with other
 -- actors; used implicitly by `receive` and `tryReceive`.
---
--- @since 0.4.0.0
 newtype Mailbox msg = Mailbox (Unagi.OutChan (Envelope msg))
 
 
@@ -143,30 +126,22 @@ newtype Mailbox msg = Mailbox (Unagi.OutChan (Envelope msg))
 --
 -- Higher-kinded message types are defined as GADTs with a type parameter. This
 -- allows specifying the response type for messages.
---
--- @since 0.4.0.0
 data Envelope (msg :: Type -> Type) where
   Cast :: msg () -> Envelope msg
   Call :: MVar res -> msg res -> Envelope msg
 
 
 -- | Message type used by actors which do not receive messages.
---
--- @since 0.4.0.0
 data NoMsg res
 
 
--- | @since 0.4.0.0
 type Actor_ = Actor NoMsg
 
 
--- | @since 0.6.0.0
 type ActorT_ = ActorT NoMsg
 
 
 -- | Spawn a child actor and return its address.
---
--- @since 0.4.0.0
 spawn
   :: MonadUnliftIO m
   => ActorT msg m ()
@@ -183,8 +158,6 @@ spawn actor = do
 
 -- | More efficient version of `spawn`, for actors which receive no messages
 -- (@msg ~ `NoMsg`@). See docs for `spawn` for more information.
---
--- @since 0.4.0.0
 spawn_ :: MonadUnliftIO m => ActorT_ m () -> ActorT msg m ()
 spawn_ actor = do
   let address = Address (error noMsgError)
@@ -204,8 +177,6 @@ spawnImpl address mailbox actor = do
 
 
 -- | Block until all child actors have terminated.
---
--- @since 0.4.0.0
 wait :: (MonadActor msg m, MonadIO m) => m ()
 wait = do
   ActorEnv{scope} <- askActorEnv
@@ -213,8 +184,6 @@ wait = do
 
 
 -- | Return the current actor's address.
---
--- @since 0.4.0.0
 getSelf :: MonadActor msg m => m (Address msg)
 getSelf = do
   ActorEnv{address} <- askActorEnv
@@ -223,8 +192,6 @@ getSelf = do
 
 -- | Send a message to another actor, expecting no response. Returns immediately
 -- without blocking.
---
--- @since 0.4.0.0
 cast
   :: MonadIO m
   => Address msg
@@ -236,8 +203,6 @@ cast (Address inChan) msg = liftIO $ Unagi.writeChan inChan (Cast msg)
 
 
 -- | Send a message to another actor, and wait for a response.
---
--- @since 0.4.0.0
 call
   :: MonadIO m
   => Address msg
@@ -254,8 +219,6 @@ call (Address inChan) msg = liftIO do
 
 -- | Receive a message. When the mailbox is empty, blocks until a message
 -- arrives.
---
--- @since 0.4.0.0
 receive
   :: (MonadActor msg m, MonadIO m)
   => (forall res. msg res -> m res)
@@ -273,8 +236,6 @@ receive callback = do
 
 
 -- | Try to receive a message. When the mailbox is empty, returns immediately.
---
--- @since 0.4.0.0
 tryReceive
   :: (MonadActor msg m, MonadIO m)
   => (forall res. msg res -> m res)
@@ -297,15 +258,11 @@ tryReceive callback = do
 
 
 -- | See docs for `runActorT` for more information.
---
--- @since 0.4.0.0
 runActor :: MonadIO m => Actor msg a -> m a
 runActor actor = liftIO $ runActorT actor
 
 
 -- | See docs for `runActorT_` for more information.
---
--- @since 0.4.0.0
 runActor_ :: MonadIO m => Actor_ a -> m a
 runActor_ actor = liftIO $ runActorT_ actor
 
@@ -325,8 +282,6 @@ runActor_ actor = liftIO $ runActorT_ actor
 --
 -- Otherwise, use `runActorT` like you would with @run@ functions from libraries
 -- like @transformers@ or @mtl@.
---
--- @since 0.6.0.0
 runActorT :: MonadUnliftIO m => ActorT msg m a -> m a
 runActorT actor = do
   (inChan, outChan) <- liftIO Unagi.newChan
@@ -337,8 +292,6 @@ runActorT actor = do
 
 -- | More efficient version of `runActorT`, for actors which receive no messages
 -- (@msg ~ `NoMsg`@). See docs for `runActorT` for more information.
---
--- @since 0.6.0.0
 runActorT_ :: MonadUnliftIO m => ActorT_ m a -> m a
 runActorT_ actor = do
   let address = Address (error noMsgError)
