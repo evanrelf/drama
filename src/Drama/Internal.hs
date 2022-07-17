@@ -1,11 +1,14 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 {-# OPTIONS_HADDOCK not-home #-}
 {-# OPTIONS_HADDOCK prune #-}
@@ -25,7 +28,12 @@ import Control.Monad (MonadPlus, void)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.IO.Unlift (MonadUnliftIO)
-import Control.Monad.Reader (ReaderT (..), asks, mapReaderT)
+import Control.Monad.Reader
+  ( MonadReader (ask, local)
+  , ReaderT (..)
+  , asks
+  , mapReaderT
+  )
 import Control.Monad.Trans (MonadTrans (..))
 import Data.Kind (Type)
 
@@ -73,6 +81,12 @@ newtype ActorT (msg :: Type -> Type) m a = ActorT (ReaderT (ActorEnv msg) m a)
 -- @since 0.6.0.0
 mapActorT :: (m a -> n b) -> ActorT msg m a -> ActorT msg n b
 mapActorT f (ActorT reader) = ActorT $ mapReaderT f reader
+
+
+-- | @since 0.6.0.0
+instance MonadReader r m => MonadReader r (ActorT msg m) where
+  ask = lift ask
+  local = mapActorT . local
 
 
 -- | Ambient context provided by the `ActorT` monad transformer.
