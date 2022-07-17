@@ -15,6 +15,21 @@
         "type": "github"
       }
     },
+    "haskell-overlay": {
+      "locked": {
+        "lastModified": 1647282478,
+        "narHash": "sha256-rejN2/JgXeTur9KY/0QQQMe6Dt0fiextq46+hZmJ2zc=",
+        "owner": "evanrelf",
+        "repo": "haskell-overlay",
+        "rev": "a81293ba5785bb80ea660a0fb4a612d9517a7497",
+        "type": "github"
+      },
+      "original": {
+        "owner": "evanrelf",
+        "repo": "haskell-overlay",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1658033722,
@@ -33,6 +48,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "haskell-overlay": "haskell-overlay",
         "nixpkgs": "nixpkgs"
       }
     }

@@ -21,13 +21,14 @@ module Drama.Internal where
 
 import Control.Applicative (Alternative)
 import Control.Concurrent (MVar, newEmptyMVar, putMVar, takeMVar)
-import Control.Monad (MonadPlus)
+import Control.Monad (MonadPlus, void)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Reader (ReaderT (..), asks)
 import Data.Kind (Type)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
+import qualified Control.Concurrent.STM as STM
 import qualified Ki
 
 -- Support `MonadFail` on GHC 8.6.5
@@ -144,7 +145,7 @@ spawnImpl
   -> Actor _msg ()
 spawnImpl address mailbox actor = do
   scope <- Actor $ asks scope
-  liftIO $ Ki.fork_ scope $ runActorImpl address mailbox actor
+  void $ liftIO $ Ki.fork scope $ runActorImpl address mailbox actor
 
 
 -- | Block until all child actors have terminated.
@@ -153,7 +154,7 @@ spawnImpl address mailbox actor = do
 wait :: Actor msg ()
 wait = do
   scope <- Actor $ asks scope
-  liftIO $ Ki.wait scope
+  liftIO $ STM.atomically $ Ki.awaitAll scope
 
 
 -- | Return the current actor's address.

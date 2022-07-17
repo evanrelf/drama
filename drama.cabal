@@ -48,7 +48,8 @@ library
   import: common
   hs-source-dirs: src
   build-depends:
-      ki           >= 0.2 && < 0.3
+    , ki           >= 1.0 && < 2.0
+    , stm
     , transformers >= 0.5 && < 1.0
     , unagi-chan   >= 0.4 && < 0.5
   exposed-modules:
