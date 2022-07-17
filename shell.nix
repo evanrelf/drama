@@ -10,7 +10,6 @@ pkgs.haskellPackages.shellFor {
   buildInputs = [
     pkgs.cabal-install
     pkgs.ghcid
-    pkgs.haskellPackages.stan
   ];
 
   doBenchmark = true;

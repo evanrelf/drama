@@ -2,8 +2,5 @@
 /dist-newstyle/
 /cabal.project.local
 /cabal.project.local~
-/.hie/
-/report.html
-/stan.html
 /result
 /result-*

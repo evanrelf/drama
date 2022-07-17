@@ -4,6 +4,4 @@
 
 {
   drama = pkgs.haskellPackages.drama;
-
-  drama-stan = pkgs.callPackage ./nix/drama-stan.nix {};
 }
