@@ -25,7 +25,8 @@ import Control.Monad (MonadPlus, void)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.IO.Unlift (MonadUnliftIO)
-import Control.Monad.Trans.Reader (ReaderT (..), asks)
+import Control.Monad.Reader (ReaderT (..), asks)
+import Control.Monad.Trans (MonadTrans (..))
 import Data.Kind (Type)
 
 import qualified Control.Concurrent.Chan.Unagi as Unagi
@@ -127,9 +128,10 @@ type ActorT_ = ActorT NoMsg
 --
 -- @since 0.4.0.0
 spawn
-  :: Actor msg ()
+  :: MonadUnliftIO m
+  => ActorT msg m ()
   -- ^ Actor to spawn
-  -> Actor _msg (Address msg)
+  -> ActorT _msg m (Address msg)
   -- ^ Spawned actor's address
 spawn actor = do
   (inChan, outChan) <- liftIO Unagi.newChan
@@ -143,7 +145,7 @@ spawn actor = do
 -- (@msg ~ `NoMsg`@). See docs for `spawn` for more information.
 --
 -- @since 0.4.0.0
-spawn_ :: Actor_ () -> Actor msg ()
+spawn_ :: MonadUnliftIO m => ActorT_ m () -> ActorT msg m ()
 spawn_ actor = do
   let address = Address (error noMsgError)
   let mailbox = Mailbox (error noMsgError)
@@ -151,19 +153,20 @@ spawn_ actor = do
 
 
 spawnImpl
-  :: Address msg
+  :: MonadUnliftIO m
+  => Address msg
   -> Mailbox msg
-  -> Actor msg ()
-  -> Actor _msg ()
+  -> ActorT msg m ()
+  -> ActorT _msg m ()
 spawnImpl address mailbox actor = do
   scope <- ActorT $ asks scope
-  void $ liftIO $ Ki.fork scope $ runActorTImpl address mailbox actor
+  void $ Ki.fork scope $ ActorT $ lift $ runActorTImpl address mailbox actor
 
 
 -- | Block until all child actors have terminated.
 --
 -- @since 0.4.0.0
-wait :: Actor msg ()
+wait :: MonadIO m => ActorT msg m ()
 wait = do
   scope <- ActorT $ asks scope
   liftIO $ STM.atomically $ Ki.awaitAll scope
@@ -172,7 +175,7 @@ wait = do
 -- | Return the current actor's address.
 --
 -- @since 0.4.0.0
-getSelf :: Actor msg (Address msg)
+getSelf :: Monad m => ActorT msg m (Address msg)
 getSelf = ActorT $ asks address
 
 
@@ -181,11 +184,12 @@ getSelf = ActorT $ asks address
 --
 -- @since 0.4.0.0
 cast
-  :: Address msg
+  :: MonadIO m
+  => Address msg
   -- ^ Actor's address
   -> msg ()
   -- ^ Message to send
-  -> Actor _msg ()
+  -> ActorT _msg m ()
 cast (Address inChan) msg = liftIO $ Unagi.writeChan inChan (Cast msg)
 
 
@@ -193,11 +197,12 @@ cast (Address inChan) msg = liftIO $ Unagi.writeChan inChan (Cast msg)
 --
 -- @since 0.4.0.0
 call
-  :: Address msg
+  :: MonadIO m
+  => Address msg
   -- ^ Actor's address
   -> msg res
   -- ^ Message to send
-  -> Actor _msg res
+  -> ActorT _msg m res
   -- ^ Response
 call (Address inChan) msg = liftIO do
   resMVar <- newEmptyMVar
@@ -210,9 +215,10 @@ call (Address inChan) msg = liftIO do
 --
 -- @since 0.4.0.0
 receive
-  :: (forall res. msg res -> Actor msg res)
+  :: MonadIO m
+  => (forall res. msg res -> ActorT msg m res)
   -- ^ Callback function that responds to messages
-  -> Actor msg ()
+  -> ActorT msg m ()
 receive callback = do
   Mailbox outChan <- ActorT $ asks mailbox
   envelope <- liftIO $ Unagi.readChan outChan
@@ -228,9 +234,10 @@ receive callback = do
 --
 -- @since 0.4.0.0
 tryReceive
-  :: (forall res. msg res -> Actor msg res)
+  :: MonadIO m
+  => (forall res. msg res -> ActorT msg m res)
   -- ^ Callback function that responds to messages
-  -> Actor msg Bool
+  -> ActorT msg m Bool
 tryReceive callback = do
   Mailbox outChan <- ActorT $ asks mailbox
   (element, _) <- liftIO $ Unagi.tryReadChan outChan
