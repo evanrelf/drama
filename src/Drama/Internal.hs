@@ -21,7 +21,7 @@ module Drama.Internal where
 
 import Control.Applicative (Alternative)
 import Control.Concurrent (MVar, newEmptyMVar, putMVar, takeMVar)
-import Control.Monad (MonadPlus, void)
+import Control.Monad (MonadPlus, (>=>), void)
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.IO.Unlift (MonadUnliftIO)
@@ -198,43 +198,74 @@ call (Address inChan) msg = liftIO do
 -- | Receive a message. When the mailbox is empty, blocks until a message
 -- arrives.
 --
--- @since 0.4.0.0
+-- From the value returned from the callback, the first member is returned
+-- to the actor who sent the message (in case of a 'call'), the second
+-- member is returned by 'receive' itself.
+--
+-- @since 0.6.0.0
 receive
-  :: (forall res. msg res -> Actor msg res)
+  :: (forall res. msg res -> Actor msg (res, a))
   -- ^ Callback function that responds to messages
-  -> Actor msg ()
+  -> Actor msg a
 receive callback = do
   Mailbox outChan <- Actor $ asks mailbox
   envelope <- liftIO $ Unagi.readChan outChan
   case envelope of
-    Cast msg ->
-      callback msg
+    Cast msg -> do
+      ((), a) <- callback msg
+      return a
     Call resMVar msg -> do
-      res <- callback msg
+      (res, a) <- callback msg
       liftIO $ putMVar resMVar res
+      return a
+
+-- | Receive a message. When the mailbox is empty, blocks until a message
+-- arrives.
+--
+-- @since 0.6.0.0
+receive_
+  :: (forall res. msg res -> Actor msg res)
+  -- ^ Callback function that responds to messages
+  -> Actor msg ()
+receive_ callback = receive (callback >=> \res -> return (res, ()))
 
 
 -- | Try to receive a message. When the mailbox is empty, returns immediately.
 --
--- @since 0.4.0.0
+-- From the value returned from the callback, the first member is returned
+-- to the actor who sent the message (in case of a 'call'), the second
+-- member is returned by 'receive' itself wrapped in 'Just'.
+--
+-- @since 0.6.0.0
 tryReceive
-  :: (forall res. msg res -> Actor msg res)
+  :: (forall res. msg res -> Actor msg (res, a))
   -- ^ Callback function that responds to messages
-  -> Actor msg Bool
+  -> Actor msg (Maybe a)
 tryReceive callback = do
   Mailbox outChan <- Actor $ asks mailbox
   (element, _) <- liftIO $ Unagi.tryReadChan outChan
   envelope <- liftIO $ Unagi.tryRead element
   case envelope of
     Nothing ->
-      pure False
+      pure Nothing
     Just (Cast msg) -> do
-      callback msg
-      pure True
+      ((), a) <- callback msg
+      pure (Just a)
     Just (Call resMVar msg) -> do
-      res <- callback msg
+      (res, a) <- callback msg
       liftIO $ putMVar resMVar res
-      pure True
+      pure (Just a)
+
+-- | Try to receive a message. When the mailbox is empty, return immediately.
+--
+-- @since 0.6.0.0
+tryReceive_
+  :: (forall res. msg res -> Actor msg res)
+  -- ^ Callback function that responds to messages
+  -> Actor msg Bool
+tryReceive_ callback = do
+  acted <- tryReceive (callback >=> \res -> return (res, ()))
+  return $ maybe False (\() -> True) acted
 
 
 -- | Run a top-level actor. Intended to be used at the entry point of your

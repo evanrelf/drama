@@ -8,6 +8,12 @@ to the [Haskell Package Versioning Policy][pvp].
 ## [0.6.0.0] - Unreleased
 
 - Add `Eq` instance for `Address`
+- Change `receive` and `tryReceive` to allow the given callback to return a
+  value to the `Actor` calling `receive`/`tryReceive`. This can be used to
+  thread pure state across a message handling loop (cfr. changes to the
+  example code). `receive_` and `tryReceive_` are provided in case no value
+  must be returned, hence, they behave the same as `receive` and `tryReceive`
+  found in version 0.5.0.0.
 
 ## [0.5.0.0] - 2022-07-16
 

@@ -20,22 +20,15 @@
 -- >   ModifyState :: (s -> s) -> StateMsg s ()
 -- >
 -- > state :: s -> Actor (StateMsg s) ()
--- > state s0 = do
--- >   stateIORef <- liftIO $ newIORef s0
--- >
--- >   forever $ receive \case
--- >     GetState ->
--- >       liftIO $ readIORef stateIORef
--- >
--- >     GetsState f -> do
--- >       s <- liftIO $ readIORef stateIORef
--- >       pure (f s)
--- >
--- >     PutState s ->
--- >       liftIO $ writeIORef stateIORef s
--- >
--- >     ModifyState f ->
--- >       liftIO $ modifyIORef stateIORef f
+-- > state = loop
+-- >   where
+-- >     loop s = do
+-- >       s' <- receive \case
+-- >         GetState -> pure (s, s)
+-- >         GetsState f -> pure (f s, s)
+-- >         PutState s' -> pure ((), s')
+-- >         ModifyState f -> pure ((), f s)
+-- >       loop s'
 
 module Drama
   ( Actor
@@ -52,7 +45,9 @@ module Drama
 
     -- * Receiving messages
   , receive
+  , receive_
   , tryReceive
+  , tryReceive_
 
     -- * Running your program
   , runActor

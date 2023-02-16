@@ -8,7 +8,6 @@ module Main (main) where
 
 import Control.Monad (forever, when)
 import Control.Monad.IO.Class (liftIO)
-import Data.IORef (modifyIORef, newIORef, readIORef, writeIORef)
 import Drama
 import System.Exit (exitSuccess)
 
@@ -44,7 +43,7 @@ counter :: Int -> Actor CounterMsg ()
 counter count0 = do
   UseState{get, modify} <- useState count0
 
-  forever $ receive \case
+  forever $ receive_ \case
     Increment n -> modify (+ n)
     Decrement n -> modify (+ negate n)
     GetCount -> get
@@ -83,22 +82,15 @@ data StateMsg s res where
 
 
 state :: s -> Actor (StateMsg s) ()
-state s0 = do
-  stateIORef <- liftIO $ newIORef s0
-
-  forever $ receive \case
-    GetState ->
-      liftIO $ readIORef stateIORef
-
-    GetsState f -> do
-      s <- liftIO $ readIORef stateIORef
-      pure (f s)
-
-    PutState s ->
-      liftIO $ writeIORef stateIORef s
-
-    ModifyState f ->
-      liftIO $ modifyIORef stateIORef f
+state = loop
+  where
+    loop s = do
+      s' <- receive \case
+        GetState -> pure (s, s)
+        GetsState f -> pure (f s, s)
+        PutState s' -> pure ((), s')
+        ModifyState f -> pure ((), f s)
+      loop s'
 
 
 data UseState s = UseState
