@@ -37,7 +37,7 @@ data LogMsg res where
 -- sending log messages to `logger`, instead of running `putStrLn` directly, we
 -- can avoid interleaving logs from actors running in parallel.
 logger :: Actor LogMsg ()
-logger = forever $ receive \case
+logger = forever $ receive_ \case
   LogMsg string -> liftIO $ putStrLn string
 
 
