@@ -83,7 +83,7 @@ data ActorEnv msg = ActorEnv
 --
 -- @since 0.4.0.0
 newtype Address msg = Address (Unagi.InChan (Envelope msg))
-
+  deriving (Eq)
 
 -- | Mailbox where an actor receives messages. Cannot be shared with other
 -- actors; used implicitly by `receive` and `tryReceive`.

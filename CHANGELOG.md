@@ -7,6 +7,8 @@ to the [Haskell Package Versioning Policy][pvp].
 
 ## [0.6.0.0] - Unreleased
 
+- Add `Eq` instance for `Address`
+
 ## [0.5.0.0] - 2022-07-16
 
 - Update to `ki-unlifted` 1.0.0
